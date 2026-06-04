@@ -223,7 +223,7 @@ while true; do
         2)
             echo -e "\n\033[32m📡 SSH 隧道正在后台运行。\033[0m"
             echo -e "🌟 安全环境防护已在 Unix 中成功激活！\033[0m"
-            echo -e "👉 您可以在当前或任何已配置的环境中，直接运行 Claude Code (claude)、启动 Antigravity，或者运行 Codex！"
+            echo -e "👉 您可以在当前或任何已配置的环境中，直接运行 Claude Code (claude)！"
             echo -e "👉 运行项目目录下的 ./restore_proxy_env.sh 可一键清理该隧道并还原设置。\n"
             break
             ;;

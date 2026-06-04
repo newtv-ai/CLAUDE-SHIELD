@@ -1,4 +1,4 @@
-﻿# Claude Shield - 快捷启动 (V2ray 全局桥接防封模式) (Windows PowerShell)
+# Claude Shield - 快捷启动 (V2ray 全局桥接防封模式) (Windows PowerShell)
 # 编码格式: UTF-8 with BOM
 
 $OutputEncoding = [System.Text.Encoding]::UTF8
@@ -83,6 +83,8 @@ $proxyVal = "http://127.0.0.1:$localPort"
 try {
     [Environment]::SetEnvironmentVariable("HTTP_PROXY", $proxyVal, "User")
     [Environment]::SetEnvironmentVariable("HTTPS_PROXY", $proxyVal, "User")
+    [Environment]::SetEnvironmentVariable("http_proxy", $proxyVal, "User")
+    [Environment]::SetEnvironmentVariable("https_proxy", $proxyVal, "User")
     [Environment]::SetEnvironmentVariable("TZ", $targetTz, "User")
     [Environment]::SetEnvironmentVariable("LANG", "en_US.UTF-8", "User")
     [Environment]::SetEnvironmentVariable("LC_ALL", "en_US.UTF-8", "User")
@@ -90,6 +92,8 @@ try {
     # 当前会话也注入，立即可用
     $env:HTTP_PROXY = $proxyVal
     $env:HTTPS_PROXY = $proxyVal
+    $env:http_proxy = $proxyVal
+    $env:https_proxy = $proxyVal
     $env:TZ = $targetTz
     $env:LANG = "en_US.UTF-8"
     $env:LC_ALL = "en_US.UTF-8"
@@ -100,10 +104,9 @@ try {
     Write-Host " - 代理中继: $proxyVal" -ForegroundColor Green
     Write-Host " - 锁定时区: $targetTz" -ForegroundColor Green
     Write-Host ""
-    Write-Host " 🌟 无需任何编辑器配置！您新开的任何终端、PowerShell 窗口都会自动受保护。" -ForegroundColor Green
+    Write-Host " 💡 提示：您新开的任何终端、PowerShell 窗口都会自动受保护。" -ForegroundColor Green
     Write-Host " 👉 请直接在任意新终端里运行您的工具：" -ForegroundColor Cyan
     Write-Host "   - 启动 Claude Code: 直接输入 claude" -ForegroundColor Cyan
-    Write-Host "   - 启动 Antigravity / Codex: 直接输入您的 Agent 启动命令" -ForegroundColor Cyan
     Write-Host "==========================================================" -ForegroundColor Green
     Write-Host ""
 } catch {
@@ -122,6 +125,8 @@ Write-Host "🧹 正在清理还原 Windows 全局环境变量..." -ForegroundCo
 try {
     [Environment]::SetEnvironmentVariable("HTTP_PROXY", $null, "User")
     [Environment]::SetEnvironmentVariable("HTTPS_PROXY", $null, "User")
+    [Environment]::SetEnvironmentVariable("http_proxy", $null, "User")
+    [Environment]::SetEnvironmentVariable("https_proxy", $null, "User")
     [Environment]::SetEnvironmentVariable("TZ", $null, "User")
     [Environment]::SetEnvironmentVariable("LANG", $null, "User")
     [Environment]::SetEnvironmentVariable("LC_ALL", $null, "User")

@@ -35,7 +35,7 @@ In 2026, Anthropic's anti-fraud system drastically tightened restrictions. Not o
 
 ## 🚀 Two Options for Anti-Ban Proxy Setup
 
-This project provides two environment configuration methods designed to **simultaneously protect three tools (Claude Code, Antigravity, and Codex)** in a safe and fast manner:
+This project provides two environment configuration methods designed to **protect Claude Code** in a safe and fast manner:
 
 > [!IMPORTANT]
 > **📢 Prerequisite for Using the Scripts**
@@ -58,11 +58,11 @@ This project provides two environment configuration methods designed to **simult
 #### 📋 Instructions (Windows Environment)
 1. Double-click to launch **`setup_proxy_env.bat`**. Enter your VPS credentials on the first run.
 2. The script runs a minimized SSH SOCKS5 tunnel in the background and writes env variables into user registries.
-3. **Global Automatic Activation**: Once configured, any **new** terminal window, CMD, or VS Code terminal will automatically inherit the safe environment. You do not need to make any menu choices; directly run `claude` (Claude Code), or launch Antigravity and Codex in these terminals. They are **all** protected simultaneously!
+3. **Global Automatic Activation**: Once configured, any **new** terminal window, CMD, or VS Code terminal will automatically inherit the safe environment. You do not need to make any menu choices; directly run `claude` (Claude Code) in these terminals.
 4. Double-click **`restore_proxy_env.bat`** after work to close the SSH tunnel and clean registries.
 
 #### 📋 Instructions (Linux / macOS Environment)
-* Run the command `source ./setup_proxy_env.sh` (using `source` ensures that the environment variables inject into the active Shell). You can then run any of the three tools inside this terminal session.
+* Run the command `source ./setup_proxy_env.sh` (using `source` ensures that the environment variables inject into the active Shell). You can then run Claude Code (`claude`) inside this terminal session.
 * Run `bash ./restore_proxy_env.sh` to close the tunnel and clean up.
 
 ---
@@ -84,7 +84,5 @@ This solution forces the terminal proxy protocol to **`socks5h://`**, commanding
    * **Linux / macOS**: Run `source ./run_claude_via_v2ray.sh` or `./run_claude_via_v2ray.sh`.
 4. Input the SOCKS5 port (press enter to use v2rayN's default `10808`), and confirm your IANA timezone (default `America/New_York`).
 5. **No Menus & Interactive Shell**: The script automatically injects variables and configures the active terminal. Instead of choosing a single tool or auto-closing, **it drops you directly into a persistent interactive shell (Protected Sandbox Terminal)**.
-6. You can directly type and run any of the three AI tools inside this terminal simultaneously:
+6. You can directly type and run Claude Code inside this terminal:
    * Launch Claude Code: type `claude`
-   * Launch Antigravity: type your Agent launch command
-   * Launch Codex: type your Agent launch command

@@ -35,7 +35,7 @@
 
 ## 🚀 两种一键代理及防泄露安全启动方案
 
-本项目在根目录下提供了两种同等安全、支持一键将环境变量注入系统以**同时保护三个工具（Claude Code、Antigravity、Codex）**的环境配置与启动方案：
+本项目在根目录下提供了两种同等安全、支持一键将环境变量注入系统以**保护 Claude Code** 的环境配置与启动方案：
 
 > [!IMPORTANT]
 > **📢 使用脚本的前提条件**
@@ -58,11 +58,11 @@
 #### 📋 使用说明（Windows 环境）
 1. 双击运行 **`setup_proxy_env.bat`**，初次使用时按提示输入 VPS 链接配置。
 2. 脚本会后台静默拉起 SSH 隧道，并自动将防泄露变量注入 Windows 用户的**全局环境变量注册表**。
-3. **全系统无感激活**：此时新开的任何命令行、PowerShell 窗口或 VS Code 终端均会自动进入防泄露保护。您无需再做任何选择，直接在此类新窗口中运行 `claude`（启动 Claude Code）、或者敲入 Antigravity 和 Codex 的启动命令，它们将**全部且同时**被完美代理与锁定防卫！
+3. **全系统无感激活**：此时新开的任何命令行、PowerShell 窗口或 VS Code 终端均会自动进入防泄露保护。您无需再做任何选择，直接在此类新窗口中运行 `claude`（启动 Claude Code），它将被完美代理与锁定防卫！
 4. 开发完毕，双击运行 **`restore_proxy_env.bat`** 断开隧道并彻底清除 Windows 全局用户环境变量，一秒还原直连网络。
 
 #### 📋 使用说明（Linux / macOS 环境）
-* 运行命令 `source ./setup_proxy_env.sh`（使用 `source` 让环境变量注入当前终端），后台 SSH 隧道自动拉起。在此终端会话中运行上述三大工具中的任何一个或全部，将直接受保护生效。
+* 运行命令 `source ./setup_proxy_env.sh`（使用 `source` 让环境变量注入当前终端），后台 SSH 隧道自动拉起。在此终端会话中运行 `claude`，将直接受保护生效。
 * 开发结束，运行 `bash ./restore_proxy_env.sh` 关闭隧道并释放代理。
 
 ---
@@ -84,10 +84,8 @@
    * **Linux / macOS**：使用 `source ./run_claude_via_v2ray.sh` 或 `./run_claude_via_v2ray.sh` 运行。
 4. 按提示输入刚才获取的本地 SOCKS5 端口（直接回车默认采用 v2rayN 默认端口 `10808`），并按回车确认 VPS 所在的 IANA 时区（默认 `America/New_York`）。
 5. **一键注入与终端保持**：脚本会自动配置当前终端的代理防线与时区锁。配置完成后，脚本**不会强制您做单选，也不会自动关闭，而是直接将当前终端保持在激活交互状态（安全隔离沙盒终端）**。
-6. 您可以直接在该终端中，输入并启动您的任何开发或 AI 协作工具：
+6. 您可以直接在该终端中，输入并启动 Claude Code：
    * 运行 Claude Code：直接输入 `claude`
-   * 运行 Antigravity：直接输入您的 Agent 启动命令
-   * 运行 Codex：直接输入您的 Agent 启动命令
 
 ---
 

@@ -1,4 +1,4 @@
-﻿# Claude Shield VPS 代理与防泄露环境一键配置脚本 (Windows PowerShell)
+# Claude Shield VPS 代理与防泄露环境一键配置脚本 (Windows PowerShell)
 # 编码格式: UTF-8 with BOM
 
 $OutputEncoding = [System.Text.Encoding]::UTF8
@@ -252,7 +252,7 @@ while ($true) {
         "3" {
             Write-Host "`n📡 SSH 隧道已成功运行在后台，全局防泄露变量已写入注册表。" -ForegroundColor Green
             Write-Host "🌟 安全防护已在 Windows 全局激活！新开的任何终端窗口、VS Code 终端或 CMD 都会自动进入代理保护中。"
-            Write-Host "👉 您可以在任何新终端中直接运行 Claude Code (claude)、启动 Antigravity，或者运行 Codex！" -ForegroundColor Cyan
+            Write-Host "👉 您可以在任何新终端中直接运行 Claude Code (claude)！" -ForegroundColor Cyan
             Write-Host "👉 运行项目目录下的 restore_proxy_env.ps1 可一键关闭隧道并清空全局环境变量。`n"
             break
         }

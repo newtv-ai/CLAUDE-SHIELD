@@ -1,4 +1,4 @@
-# Claude Shield VPS 代理与防泄露环境一键配置脚本 (Windows PowerShell)
+﻿# Claude Shield VPS 代理与防泄露环境一键配置脚本 (Windows PowerShell)
 # 编码格式: UTF-8 with BOM
 
 $OutputEncoding = [System.Text.Encoding]::UTF8

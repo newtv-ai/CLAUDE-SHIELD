@@ -1,4 +1,4 @@
-# Claude Shield - 快捷启动 (V2ray 全局桥接防封模式) (Windows PowerShell)
+﻿# Claude Shield - 快捷启动 (V2ray 全局桥接防封模式) (Windows PowerShell)
 # 编码格式: UTF-8 with BOM
 
 $OutputEncoding = [System.Text.Encoding]::UTF8
@@ -98,13 +98,13 @@ try {
     Write-Host ""
     Write-Host "==========================================================" -ForegroundColor Green
     Write-Host " ✅ 全局安全环境防护已成功激活！" -ForegroundColor Green
-    Write-Host " - 代理中继: $proxyVal"
-    Write-Host " - 锁定时区: $targetTz"
+    Write-Host " - 代理中继: $proxyVal" -ForegroundColor Green
+    Write-Host " - 锁定时区: $targetTz" -ForegroundColor Green
     Write-Host ""
     Write-Host " 🌟 无需任何编辑器配置！您新开的任何终端、PowerShell 窗口都会自动受保护。" -ForegroundColor Green
     Write-Host " 👉 请直接在任意新终端里运行您的工具：" -ForegroundColor Cyan
-    Write-Host "   - 启动 Claude Code: 直接输入 claude"
-    Write-Host "   - 启动 Antigravity / Codex: 直接输入您的 Agent 启动命令"
+    Write-Host "   - 启动 Claude Code: 直接输入 claude" -ForegroundColor Cyan
+    Write-Host "   - 启动 Antigravity / Codex: 直接输入您的 Agent 启动命令" -ForegroundColor Cyan
     Write-Host "==========================================================" -ForegroundColor Green
     Write-Host ""
 } catch {

@@ -14,7 +14,7 @@ Write-Host ""
 $configFile = Join-Path $PSScriptRoot "vps_config.json"
 
 # 默认初始参数
-$localPort = 10809
+$localPort = 10808
 $targetTz = "America/New_York"
 $useSaved = $false
 
@@ -23,7 +23,7 @@ if (Test-Path $configFile) {
     try {
         $loadedConfig = Get-Content $configFile -Raw | ConvertFrom-Json
         if ($loadedConfig) {
-            # 兼容性处理：优先读取 v2ray_local_port，其次 local_port，最后 10809 默认值
+            # 兼容性处理：优先读取 v2ray_local_port，其次 local_port，最后 10808 默认值
             if ($loadedConfig.v2ray_local_port) {
                 $localPort = $loadedConfig.v2ray_local_port
                 $useSaved = $true
@@ -45,7 +45,8 @@ if (Test-Path $configFile) {
 if (-not $useSaved) {
     Write-Host "请输入您的本地代理参数（配置将被保存，后续运行将自动加载无需再次输入）：" -ForegroundColor Cyan
     
-    $portStr = Read-Host "👉 请输入本地 HTTP 代理端口 (v2rayN 默认 10809, Clash 默认 7890, 直接回车使用默认)"
+    Write-Host "💡 提示：新版 v2rayN (Mixed) 默认是 10808，Clash 默认是 7890；如果您是老版本 v2rayN 分立端口，HTTP 端口通常为 10809。" -ForegroundColor Yellow
+    $portStr = Read-Host "👉 请输入本地 HTTP 代理端口 (默认 10808, 直接回车使用默认)"
     if (-not [string]::IsNullOrWhiteSpace($portStr)) {
         if ([int]::TryParse($portStr, [ref]$portObj)) {
             $localPort = $portObj
@@ -71,7 +72,7 @@ if (-not $useSaved) {
     Write-Host "✅ 配置已成功保存至 $configFile`n" -ForegroundColor Green
 } else {
     Write-Host "💡 自动加载已保存的本地配置：" -ForegroundColor Green
-    Write-Host "   - 本地 HTTP 端口: $localPort"
+    Write-Host "   - 本地 HTTP 端口: $localPort (注：新版 v2rayN 混合/Clash 推荐 10808/7890，老版 v2rayN 推荐 10809)"
     Write-Host "   - 锁定目标时区: $targetTz"
     Write-Host "   *(如需修改配置，请直接删除同目录下的 vps_config.json)*`n" -ForegroundColor Gray
 }

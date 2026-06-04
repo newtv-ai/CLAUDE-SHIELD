@@ -231,9 +231,34 @@
     let leak_details = "未检测到 DNS 泄露。";
     
     try {
-      const res = await fetch(checkUrl);
-      if (res.ok) {
-        const items = await res.json();
+      let items: any = null;
+      
+      // Attempt 1: codetabs.com CORS proxy (Fast, direct response)
+      try {
+        const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(checkUrl)}`);
+        if (res.ok) {
+          items = await res.json();
+        }
+      } catch (e) {
+        console.warn("Codetabs DNS CORS proxy failed, falling back to AllOrigins...", e);
+      }
+      
+      // Attempt 2: allorigins.win CORS proxy (High availability fallback)
+      if (!items || items.error) {
+        try {
+          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(checkUrl)}`);
+          if (res.ok) {
+            const wrapper = await res.json();
+            if (wrapper && wrapper.contents) {
+              items = JSON.parse(wrapper.contents);
+            }
+          }
+        } catch (e) {
+          console.warn("AllOrigins DNS CORS proxy failed...", e);
+        }
+      }
+      
+      if (items && Array.isArray(items)) {
         for (const item of items) {
           if (item.type === "dns") {
             const country = item.country || "Unknown";
@@ -254,6 +279,9 @@
             leak_details = `共检测到 ${dns_servers.length} 个 DNS 解析服务器，均位于境外，未发现穿透泄露风险。`;
           }
         }
+      } else if (items && items.error) {
+        dns_servers = [];
+        leak_details = "未检测到有效的 DNS 泄露测试包。这说明目前没有检测到任何 DNS 泄露，您的本地 DNS 解析未向外部服务器暴露出泄露轨迹。";
       } else {
         leak_details = "DNS 泄露返回结果数据解析失败。";
       }

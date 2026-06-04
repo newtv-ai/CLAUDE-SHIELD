@@ -1,4 +1,4 @@
-# Claude Shield - 快捷启动 (V2ray 全局桥接防封模式) (Windows PowerShell)
+﻿# Claude Shield - 快捷启动 (V2ray 全局桥接防封模式) (Windows PowerShell)
 # 编码格式: UTF-8 with BOM
 
 $OutputEncoding = [System.Text.Encoding]::UTF8

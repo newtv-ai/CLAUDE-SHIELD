@@ -244,7 +244,7 @@ while ($true) {
             if (-not (Start-IsolatedBrowser -BrowserType "chrome")) {
                 Write-Host "❌ 未在您的电脑上找到 Google Chrome 浏览器，正在尝试启动 Edge..." -ForegroundColor Yellow
                 if (-not (Start-IsolatedBrowser -BrowserType "edge")) {
-                    Write-Host "❌ 自动启动浏览器失败，请手动打开您的浏览器，并配置代理 socks5://127.0.0.1:$($vpsConfig.local_port)" -ForegroundColor Red
+                    Write-Host "❌ 自动启动浏览器失败，请手动打开您的浏览器，并配置代理 socks5://127.0.0.1:$($vpsConfig.ssh_local_port)" -ForegroundColor Red
                 }
             }
         }

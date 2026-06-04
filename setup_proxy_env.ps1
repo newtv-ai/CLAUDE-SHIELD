@@ -152,8 +152,8 @@ Write-Host "⏳ 等待 3 秒以确保隧道初始化完成..."
 Start-Sleep -Seconds 3
 
 # 5. 配置防泄露环境变量
-# 核心防御：必须使用 socks5h:// 以强制由远程 VPS 解析 DNS，杜绝 DNS 本地泄露风险！
-$proxyVal = "socks5h://127.0.0.1:$($vpsConfig.ssh_local_port)"
+# 核心防御：强制由远程 VPS 解析 DNS，杜绝 DNS 本地泄露风险！
+$proxyVal = "socks5://127.0.0.1:$($vpsConfig.ssh_local_port)"
 $tzVal = $vpsConfig.vps_tz
 
 # 同时注入当前会话（立立即生效）

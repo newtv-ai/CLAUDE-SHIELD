@@ -160,8 +160,8 @@ fi
 sleep 1
 
 # 4. 配置环境变量
-# 核心防御：必须使用 socks5h:// 以强制由远程 VPS 解析 DNS，杜绝 DNS 本地泄露风险！
-PROXY_VAL="socks5h://127.0.0.1:$ssh_local_port"
+# 核心防御：强制由远程 VPS 解析 DNS，杜绝 DNS 本地泄露风险！
+PROXY_VAL="socks5://127.0.0.1:$ssh_local_port"
 
 export HTTP_PROXY="$PROXY_VAL"
 export HTTPS_PROXY="$PROXY_VAL"

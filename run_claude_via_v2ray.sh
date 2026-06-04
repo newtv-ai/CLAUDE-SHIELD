@@ -10,17 +10,17 @@ echo ""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/vps_config.json"
 
-local_port=10808
+local_port=10809
 vps_tz="America/New_York"
 has_config=false
 
 if [ -f "$CONFIG_FILE" ]; then
     if command -v jq &> /dev/null; then
-        local_port=$(jq -r '.v2ray_local_port // .local_port // 10808' "$CONFIG_FILE")
+        local_port=$(jq -r '.v2ray_local_port // .local_port // 10809' "$CONFIG_FILE")
         vps_tz=$(jq -r '.vps_tz // "America/New_York"' "$CONFIG_FILE")
         has_config=true
     elif command -v node &> /dev/null; then
-        local_port=$(node -e "try { const d = JSON.parse(require('fs').readFileSync('$CONFIG_FILE','utf8')); console.log(d.v2ray_local_port || d.local_port || 10808); } catch(e) { console.log(10808); }")
+        local_port=$(node -e "try { const d = JSON.parse(require('fs').readFileSync('$CONFIG_FILE','utf8')); console.log(d.v2ray_local_port || d.local_port || 10809); } catch(e) { console.log(10809); }")
         vps_tz=$(node -e "try { const d = JSON.parse(require('fs').readFileSync('$CONFIG_FILE','utf8')); console.log(d.vps_tz || 'America/New_York'); } catch(e) { console.log('America/New_York'); }")
         has_config=true
     else
@@ -38,11 +38,11 @@ fi
 
 if [ "$has_config" = false ] || [ "$local_port" = "null" ] || [ -z "$local_port" ]; then
     # 强制重设默认值，防止空值
-    local_port=10808
+    local_port=10809
     vps_tz="America/New_York"
     
     echo "[配置] 检测到是首次运行，请配置您的本地代理参数（配置将被保存无需下次重复输入）："
-    read -p "👉 请输入本地 SOCKS5 代理端口 (默认 10808, 直接回车使用默认): " input_port
+    read -p "👉 请输入本地 HTTP 代理端口 (v2rayN 默认 10809, Clash 默认 7890, 直接回车使用默认): " input_port
     local_port=${input_port:-$local_port}
     
     read -p "👉 请输入节点目标时区 (默认 America/New_York, 直接回车使用默认): " input_tz
@@ -84,13 +84,13 @@ EOF
     echo -e "\033[32m✅ 配置已成功保存至 $CONFIG_FILE\033[0m\n"
 else
     echo -e "💡 \033[32m自动加载已保存的本地配置：\033[0m"
-    echo -e "   - 本地 SOCKS5 端口: $local_port"
+    echo -e "   - 本地 HTTP 端口: $local_port"
     echo -e "   - 锁定目标时区: $vps_tz"
     echo -e "   *(如需修改配置，请直接删除同目录下的 vps_config.json)*"
     echo ""
 fi
 
-PROXY_VAL="socks5h://127.0.0.1:$local_port"
+PROXY_VAL="http://127.0.0.1:$local_port"
 
 # 识别 Shell 配置文件
 SHELL_RC=""

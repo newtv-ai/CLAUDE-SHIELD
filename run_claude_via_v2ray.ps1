@@ -14,7 +14,7 @@ Write-Host ""
 $configFile = Join-Path $PSScriptRoot "vps_config.json"
 
 # 默认初始参数
-$localPort = 10808
+$localPort = 10809
 $targetTz = "America/New_York"
 $useSaved = $false
 
@@ -23,7 +23,7 @@ if (Test-Path $configFile) {
     try {
         $loadedConfig = Get-Content $configFile -Raw | ConvertFrom-Json
         if ($loadedConfig) {
-            # 兼容性处理：优先读取 v2ray_local_port，其次 local_port，最后 10808 默认值
+            # 兼容性处理：优先读取 v2ray_local_port，其次 local_port，最后 10809 默认值
             if ($loadedConfig.v2ray_local_port) {
                 $localPort = $loadedConfig.v2ray_local_port
                 $useSaved = $true
@@ -45,7 +45,7 @@ if (Test-Path $configFile) {
 if (-not $useSaved) {
     Write-Host "请输入您的本地代理参数（配置将被保存，后续运行将自动加载无需再次输入）：" -ForegroundColor Cyan
     
-    $portStr = Read-Host "👉 请输入本地 SOCKS5 代理端口 (默认 10808, 直接回车使用默认)"
+    $portStr = Read-Host "👉 请输入本地 HTTP 代理端口 (v2rayN 默认 10809, Clash 默认 7890, 直接回车使用默认)"
     if (-not [string]::IsNullOrWhiteSpace($portStr)) {
         if ([int]::TryParse($portStr, [ref]$portObj)) {
             $localPort = $portObj
@@ -71,15 +71,15 @@ if (-not $useSaved) {
     Write-Host "✅ 配置已成功保存至 $configFile`n" -ForegroundColor Green
 } else {
     Write-Host "💡 自动加载已保存的本地配置：" -ForegroundColor Green
-    Write-Host "   - 本地 SOCKS5 端口: $localPort"
+    Write-Host "   - 本地 HTTP 端口: $localPort"
     Write-Host "   - 锁定目标时区: $targetTz"
     Write-Host "   *(如需修改配置，请直接删除同目录下的 vps_config.json)*`n" -ForegroundColor Gray
 }
 
 Write-Host "📡 正在注入 Windows 用户级全局环境变量..." -ForegroundColor Cyan
 
-# 注入环境变量（必须使用 socks5h 强制由 VPS 远程解析 DNS，避免本地 DNS 泄露）
-$proxyVal = "socks5h://127.0.0.1:$localPort"
+# 注入环境变量（使用兼容性最佳的 http 协议，避免 Node.js 报 UnsupportedProxyProtocol 错误）
+$proxyVal = "http://127.0.0.1:$localPort"
 
 try {
     [Environment]::SetEnvironmentVariable("HTTP_PROXY", $proxyVal, "User")

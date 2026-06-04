@@ -190,7 +190,7 @@
     width: 16px;
     left: 3px;
     bottom: 3px;
-    background-color: rgba(255, 255, 255, 0.6);
+    background-color: var(--text-muted);
     transition: .4s;
     border-radius: 50%;
   }
@@ -206,7 +206,7 @@
 
   /* Cyberpunk Preset Buttons Group */
   .scenario-select {
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-top: 1px solid var(--card-border);
     padding-top: 16px;
     animation: slideDown 0.3s ease;
   }
@@ -225,20 +225,20 @@
     width: 100%;
     padding: 10px 14px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--card-border);
+    background: var(--box-bg);
     cursor: pointer;
     text-align: left;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .scenario-btn:hover {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: var(--box-bg);
+    border-color: var(--border-hover);
   }
 
   .scenario-btn.active {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--box-bg);
   }
 
   .scenario-btn.active:has(.dot.clean) {
@@ -282,20 +282,20 @@
   .btn-title {
     font-size: 13px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text-secondary);
   }
 
   .scenario-btn.active .btn-title {
-    color: #ffffff;
+    color: var(--text-primary);
   }
 
   .btn-desc {
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-muted);
   }
 
   .scenario-btn.active .btn-desc {
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--text-secondary);
   }
 
   @keyframes slideDown {

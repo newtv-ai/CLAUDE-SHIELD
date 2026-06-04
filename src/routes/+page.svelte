@@ -532,6 +532,11 @@
     --border-hover: rgba(255, 255, 255, 0.12);
     --dashboard-bg: rgba(13, 20, 38, 0.6);
     --dashboard-border: rgba(255, 255, 255, 0.08);
+    --color-accent: #00f3ff;
+    --color-warning: #ffaa00;
+    --color-warning-text: #ff8800;
+    --color-danger: #ff0055;
+    --color-orange: #ff5500;
   }
 
   :global(.light-theme) {
@@ -547,6 +552,11 @@
     --border-hover: rgba(15, 23, 42, 0.12);
     --dashboard-bg: rgba(255, 255, 255, 0.85);
     --dashboard-border: rgba(15, 23, 42, 0.1);
+    --color-accent: #0891b2;
+    --color-warning: #d97706;
+    --color-warning-text: #c2410c;
+    --color-danger: #dc2626;
+    --color-orange: #ea580c;
   }
 
   :global(body) {
@@ -657,17 +667,17 @@
 
   .version-tag {
     font-size: 11px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--box-bg);
+    border: 1px solid var(--card-border);
     border-radius: 6px;
     padding: 2px 8px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
     font-weight: 600;
   }
 
   .subtitle {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
     margin: 6px 0 0 0;
     letter-spacing: 0.5px;
   }
@@ -703,11 +713,11 @@
 
   .app-footer {
     margin-top: 50px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--card-border);
     padding-top: 20px;
     text-align: center;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--text-muted);
     display: flex;
     flex-direction: column;
     gap: 6px;

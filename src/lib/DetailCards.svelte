@@ -118,7 +118,7 @@
                 <div class="webrtc-item" class:dangerous-ip={!ip.startsWith('192.168.') && !ip.startsWith('10.') && !ip.startsWith('172.') && !ip.startsWith('127.') && ip !== report?.ip_info?.query}>
                   • {ip} 
                   {#if ip === report?.ip_info?.query}
-                    <span class="int-tag" style="background: rgba(0, 243, 255, 0.15); color: #00f3ff; border: 1px solid rgba(0, 243, 255, 0.3);">代理出口(安全未泄露)</span>
+                    <span class="int-tag safe">代理出口(安全未泄露)</span>
                   {:else if !ip.startsWith('192.168.') && !ip.startsWith('10.') && !ip.startsWith('172.') && !ip.startsWith('127.')}
                     <span class="leak-tag">真实物理IP(严重泄露)</span>
                   {:else}
@@ -321,7 +321,7 @@
   }
 
   .highlight {
-    color: #00f3ff;
+    color: var(--color-accent);
   }
 
   .font-mono {
@@ -337,7 +337,7 @@
   }
 
   .warn {
-    color: #ffaa00;
+    color: var(--color-warning);
   }
 
   .font-bold {
@@ -362,15 +362,15 @@
 
   .fraud-score-val {
     font-weight: 700;
-    color: #00f3ff;
+    color: var(--color-accent);
   }
 
   .fraud-score-val.high {
-    color: #ff0055;
+    color: var(--color-danger);
   }
 
   .fraud-score-val.med {
-    color: #ffaa00;
+    color: var(--color-warning);
   }
 
   .progress-bar-bg {
@@ -407,7 +407,7 @@
   .status-badge.danger {
     background: rgba(255, 0, 85, 0.1);
     border-color: rgba(255, 0, 85, 0.3);
-    color: #ff3b70;
+    color: var(--color-danger);
   }
 
   .sub-section {
@@ -439,21 +439,21 @@
 
   .status-indicator.safe {
     background: rgba(0, 243, 255, 0.15);
-    color: #00f3ff;
+    color: var(--color-accent);
   }
 
   .status-indicator.danger {
     background: rgba(255, 0, 85, 0.15);
-    color: #ff0055;
+    color: var(--color-danger);
   }
 
   .status-indicator.warn {
     background: rgba(255, 170, 0, 0.15);
-    color: #ffaa00;
+    color: var(--color-warning);
   }
 
   .leak-description {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
     margin-top: 4px;
     margin-bottom: 8px;
     line-height: 1.5;
@@ -461,7 +461,7 @@
 
   .dns-server-list {
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--card-border);
     border-radius: 8px;
     padding: 8px 12px;
     max-height: 90px;
@@ -470,7 +470,7 @@
 
   .dns-item {
     padding: 3px 0;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-secondary);
   }
 
   .webrtc-list {
@@ -480,9 +480,9 @@
   }
 
   .webrtc-item {
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--text-secondary);
     padding: 4px 8px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--box-bg);
     border-radius: 4px;
     display: flex;
     justify-content: space-between;
@@ -511,6 +511,12 @@
     border-radius: 2px;
   }
 
+  .int-tag.safe {
+    background: rgba(0, 243, 255, 0.12);
+    color: var(--color-accent);
+    border: 1px solid rgba(0, 243, 255, 0.25);
+  }
+
   .consistency-item {
     background: var(--sub-item-bg);
     border: 1px solid var(--card-border);
@@ -535,12 +541,12 @@
     padding: 2px 6px;
     border-radius: 4px;
     background: rgba(255, 85, 0, 0.15);
-    color: #ff5500;
+    color: var(--color-orange);
   }
 
   .match-indicator.match {
     background: rgba(0, 243, 255, 0.15);
-    color: #00f3ff;
+    color: var(--color-accent);
   }
 
   .cons-body {
@@ -553,7 +559,7 @@
 
   .fix-tip {
     font-size: 11px;
-    color: #ff8800;
+    color: var(--color-warning-text);
     margin: 8px 0 0 0;
     line-height: 1.5;
   }
@@ -566,9 +572,9 @@
     margin-top: 6px;
     word-break: break-all;
     font-size: 12px;
-    color: #00f3ff;
+    color: var(--color-accent);
     line-height: 1.5;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
     transition: background 0.4s ease, border-color 0.4s ease;
   }
 
@@ -586,11 +592,11 @@
     border-color: rgba(255, 0, 85, 0.25);
     font-size: 11px;
     line-height: 1.5;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-secondary);
   }
 
   .bot-warning strong {
-    color: #ff3b70;
+    color: var(--color-danger);
   }
 
   /* Skeleton Screen Styles */
@@ -640,13 +646,39 @@
     width: 6px;
   }
   .scrollbar::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.05);
   }
   .scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--border-hover);
     border-radius: 3px;
   }
   .scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--text-muted);
+  }
+
+  /* Light Theme Specific Adjustments */
+  :global(.light-theme) .int-tag.safe {
+    background: rgba(8, 145, 178, 0.08);
+    border-color: rgba(8, 145, 178, 0.2);
+  }
+
+  :global(.light-theme) .status-indicator.safe {
+    background: rgba(8, 145, 178, 0.08);
+  }
+
+  :global(.light-theme) .status-indicator.danger {
+    background: rgba(220, 38, 38, 0.08);
+  }
+
+  :global(.light-theme) .status-indicator.warn {
+    background: rgba(217, 119, 6, 0.08);
+  }
+
+  :global(.light-theme) .match-indicator.match {
+    background: rgba(8, 145, 178, 0.08);
+  }
+
+  :global(.light-theme) .match-indicator {
+    background: rgba(234, 88, 12, 0.08);
   }
 </style>

@@ -47,10 +47,8 @@ if (-not $useSaved) {
     
     Write-Host "💡 提示：新版 v2rayN (Mixed) 默认是 10808，Clash 默认是 7890；如果您是老版本 v2rayN 分立端口，HTTP 端口通常为 10809。" -ForegroundColor Yellow
     $portStr = Read-Host "👉 请输入本地 HTTP 代理端口 (默认 10808, 直接回车使用默认)"
-    if (-not [string]::IsNullOrWhiteSpace($portStr)) {
-        if ([int]::TryParse($portStr, [ref]$portObj)) {
-            $localPort = $portObj
-        }
+    if ($portStr -match '^\d+$') {
+        $localPort = [int]$portStr
     }
     
     $tzStr = Read-Host "👉 请输入节点目标时区 (默认 America/New_York, 直接回车使用默认)"

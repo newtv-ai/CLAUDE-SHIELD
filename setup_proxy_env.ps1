@@ -71,17 +71,13 @@ if (-not $useSaved) {
     if (-not [string]::IsNullOrWhiteSpace($user)) { $vpsConfig.ssh_user = $user.Trim() }
 
     $portStr = Read-Host "👉 请输入 SSH 端口号 (默认: 22)"
-    if (-not [string]::IsNullOrWhiteSpace($portStr)) {
-        if ([int]::TryParse($portStr, [ref]$portObj)) {
-            $vpsConfig.ssh_port = $portObj
-        }
+    if ($portStr -match '^\d+$') {
+        $vpsConfig.ssh_port = [int]$portStr
     }
 
     $localPortStr = Read-Host "👉 请输入本地 SOCKS5 代理端口 (默认: 1080)"
-    if (-not [string]::IsNullOrWhiteSpace($localPortStr)) {
-        if ([int]::TryParse($localPortStr, [ref]$localPortObj)) {
-            $vpsConfig.ssh_local_port = $localPortObj
-        }
+    if ($localPortStr -match '^\d+$') {
+        $vpsConfig.ssh_local_port = [int]$localPortStr
     }
 
     $tz = Read-Host "👉 请输入 VPS 所在的 IANA 时区 (默认: America/New_York)"

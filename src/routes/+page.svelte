@@ -229,6 +229,26 @@
 
   const IP_LOOKUP_TIMEOUT_MS = 2200;
   const DNS_LOOKUP_TIMEOUT_MS = 2500;
+  const SUPPORTED_REGION_CODES = new Set([
+    "AD", "AE", "AG", "AL", "AM", "AO", "AR", "AT", "AU", "AZ",
+    "BA", "BB", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BN", "BO",
+    "BR", "BS", "BT", "BW", "BZ", "CA", "CG", "CH", "CI", "CL",
+    "CM", "CO", "CR", "CV", "CY", "CZ", "DE", "DJ", "DK", "DM",
+    "DO", "DZ", "EC", "EE", "EG", "ES", "FI", "FJ", "FM",
+    "FR", "GA", "GB", "GD", "GE", "GH", "GM", "GN", "GQ", "GR",
+    "GT", "GW", "GY", "HN", "HR", "HT", "HU", "ID", "IE", "IL",
+    "IN", "IQ", "IS", "IT", "JM", "JO", "JP", "KE", "KG", "KH",
+    "KI", "KM", "KN", "KR", "KW", "KZ", "LA", "LB", "LC", "LI",
+    "LK", "LR", "LS", "LT", "LU", "LV", "MA", "MC", "MD", "ME",
+    "MG", "MH", "MK", "MN", "MP", "MR", "MT", "MU", "MV", "MW",
+    "MX", "MY", "MZ", "NA", "NE", "NG", "NL", "NO", "NP", "NR",
+    "NZ", "OM", "PA", "PE", "PG", "PH", "PK", "PL", "PS", "PT",
+    "PW", "PY", "QA", "RO", "RS", "RW", "SA", "SB", "SC", "SE",
+    "SG", "SI", "SK", "SL", "SM", "SN", "SR", "ST", "SV", "SZ",
+    "TD", "TG", "TH", "TJ", "TL", "TM", "TN", "TO", "TR", "TT",
+    "TV", "TW", "TZ", "UA", "UG", "US", "UY", "UZ", "VA", "VC",
+    "VN", "VU", "WS", "ZA", "ZM", "ZW"
+  ]);
 
   async function fetchWithTimeout(url: string, timeoutMs: number, init: RequestInit = {}): Promise<Response> {
     const controller = new AbortController();
@@ -431,6 +451,134 @@
     return { success: true, fraud_score: 8, connection_type: "residential", abuse_velocity: "none", active_vpn: false, active_tor: false };
   }
 
+  function assessRegionPolicy(ip_info: ExitIpInfo) {
+    const countryCode = (ip_info.countryCode || "").toUpperCase();
+    const supported_region = SUPPORTED_REGION_CODES.has(countryCode);
+    const flags: string[] = [];
+    let risk_score = 0;
+
+    if (!supported_region) {
+      flags.push(`当前出口国家/地区 ${countryCode || "未知"} 不在 Claude 官方支持地区列表内，存在地区可用性风险。`);
+      risk_score = Math.max(risk_score, 100);
+    }
+
+    if (flags.length === 0) {
+      flags.push("当前出口国家/地区在 Claude 官方支持地区列表内。");
+    }
+
+    return {
+      supported_region,
+      country_code: countryCode || "UNKNOWN",
+      risk_score,
+      flags
+    };
+  }
+
+  function collectBrowserIntegrity() {
+    const nav = navigator as any;
+    const ua = navigator.userAgent || "";
+    const platform = navigator.platform || "unknown";
+    const userAgentPlatform = nav.userAgentData?.platform || "";
+    const languages = Array.from(navigator.languages || []);
+    const pluginsCount = navigator.plugins?.length || 0;
+    const hasChromeRuntime = typeof (window as any).chrome !== "undefined";
+    const isChromiumUa = /Chrome|Chromium|Edg/i.test(ua);
+    const isHeadless = /HeadlessChrome|PhantomJS|SlimerJS/i.test(ua);
+    const webdriver = navigator.webdriver === true;
+    const cookieEnabled = navigator.cookieEnabled;
+
+    let storageAvailable = true;
+    try {
+      const key = "__claude_shield_storage_probe__";
+      localStorage.setItem(key, "1");
+      localStorage.removeItem(key);
+    } catch {
+      storageAvailable = false;
+    }
+
+    const uaLooksWindows = /Windows/i.test(ua);
+    const uaLooksMac = /Mac OS X|Macintosh/i.test(ua);
+    const uaLooksLinux = /Linux/i.test(ua) && !/Android/i.test(ua);
+    const platformLooksWindows = /Win/i.test(platform) || /Windows/i.test(userAgentPlatform);
+    const platformLooksMac = /Mac/i.test(platform) || /macOS/i.test(userAgentPlatform);
+    const platformLooksLinux = /Linux/i.test(platform) || /Linux/i.test(userAgentPlatform);
+    const platformMismatch = (uaLooksWindows && !platformLooksWindows)
+      || (uaLooksMac && !platformLooksMac)
+      || (uaLooksLinux && !platformLooksLinux);
+
+    const issues: string[] = [];
+    let risk_score = 0;
+
+    if (webdriver) {
+      issues.push("navigator.webdriver=true，浏览器暴露自动化控制特征。");
+      risk_score = Math.max(risk_score, 100);
+    }
+    if (isHeadless) {
+      issues.push("User-Agent 暴露 Headless/自动化浏览器特征。");
+      risk_score = Math.max(risk_score, 100);
+    }
+    if (!cookieEnabled) {
+      issues.push("浏览器 Cookie 被禁用，可能影响 Claude 登录会话与风控连续性。");
+      risk_score = Math.max(risk_score, 70);
+    }
+    if (!storageAvailable) {
+      issues.push("localStorage 不可用，登录态与设备连续性信号可能异常。");
+      risk_score = Math.max(risk_score, 65);
+    }
+    if (platformMismatch) {
+      issues.push("User-Agent 操作系统与 navigator.platform / Client Hints 不一致。");
+      risk_score = Math.max(risk_score, 55);
+    }
+    if (languages.length === 0) {
+      issues.push("navigator.languages 为空，属于常见自动化/指纹缺失信号。");
+      risk_score = Math.max(risk_score, 45);
+    }
+    if (isChromiumUa && !hasChromeRuntime) {
+      issues.push("Chromium UA 缺少 window.chrome 运行时对象，可能是非标准浏览器壳。");
+      risk_score = Math.max(risk_score, 35);
+    }
+    if (pluginsCount === 0 && isChromiumUa) {
+      issues.push("浏览器插件列表为空；现代桌面 Chromium 通常会暴露内置 PDF 插件。");
+      risk_score = Math.max(risk_score, 30);
+    }
+    if (issues.length === 0) {
+      issues.push("未发现明显的自动化、无头浏览器或关键存储能力缺失信号。");
+    }
+
+    return {
+      risk_score,
+      webdriver,
+      is_headless: isHeadless,
+      cookie_enabled: cookieEnabled,
+      storage_available: storageAvailable,
+      platform_mismatch: platformMismatch,
+      user_agent: ua,
+      platform,
+      user_agent_platform: userAgentPlatform || "unknown",
+      languages,
+      plugins_count: pluginsCount,
+      hardware_concurrency: navigator.hardwareConcurrency || "unknown",
+      device_memory: nav.deviceMemory || "unknown",
+      screen: `${window.screen.width}x${window.screen.height}@${window.devicePixelRatio || 1}`,
+      issues
+    };
+  }
+
+  function riskFloorFromRegionScore(regionScore: number) {
+    if (regionScore >= 100) return 88;
+    if (regionScore >= 85) return 76;
+    if (regionScore >= 70) return 64;
+    if (regionScore >= 35) return 38;
+    return 0;
+  }
+
+  function riskLevelFromScore(score: number) {
+    if (score < 25) return "低风险";
+    if (score < 50) return "中风险";
+    if (score < 75) return "高风险";
+    return "极高风险";
+  }
+
   async function fetchDnsLeakItems(checkUrl: string) {
     const attempts = [
       async () => {
@@ -526,9 +674,34 @@
       // Run mock scenario loader with fake delay
       setTimeout(() => {
         const scenarioData = mockReports[mockScenario];
-        report = scenarioData;
-        riskScore = scenarioData.risk_score;
-        riskLevel = scenarioData.risk_level;
+        const region_policy = assessRegionPolicy(scenarioData.ip_info);
+        const browser_integrity = scenarioData.browser_integrity || {
+          risk_score: scenarioData.tls_fingerprint?.ja4_match ? 0 : 85,
+          webdriver: false,
+          is_headless: !scenarioData.tls_fingerprint?.ja4_match,
+          cookie_enabled: true,
+          storage_available: true,
+          platform_mismatch: false,
+          user_agent: scenarioData.tls_fingerprint?.user_agent || "Mock Browser",
+          platform: "Win32",
+          user_agent_platform: "Windows",
+          languages: [scenarioData.consistency.system_language],
+          plugins_count: scenarioData.tls_fingerprint?.ja4_match ? 5 : 0,
+          hardware_concurrency: 8,
+          device_memory: 8,
+          screen: "1920x1080@1",
+          issues: scenarioData.tls_fingerprint?.ja4_match
+            ? ["演示模式：未发现明显浏览器自动化特征。"]
+            : ["演示模式：模拟非标准自动化客户端指纹。"]
+        };
+
+        riskScore = Math.max(scenarioData.risk_score, riskFloorFromRegionScore(region_policy.risk_score), browser_integrity.risk_score * 0.55);
+        riskLevel = riskLevelFromScore(riskScore);
+        report = {
+          ...scenarioData,
+          region_policy,
+          browser_integrity
+        };
         if (scenarioData.webrtc) {
           webrtcIps = scenarioData.webrtc;
         }
@@ -553,6 +726,8 @@
 
         // B. Estimate IP reputation from provider network metadata.
         const ipqs_info = estimateIpReputation(ip_info);
+        const region_policy = assessRegionPolicy(ip_info);
+        const browser_integrity = collectBrowserIntegrity();
 
         // C. Run WebRTC and DNS leak checks concurrently.
         const [detectedWebRtcIps, dns_report] = await Promise.all([
@@ -594,8 +769,8 @@
         };
 
         // F. Risk score calculations
-        // R = w_ip * S_ip + w_leak * S_leak + w_geo * S_geo + w_tls * S_tls
-        // Weights: ip: 0.40, leak: 0.25, geo: 0.20, tls: 0.15
+        // R = weighted blend of region availability, IP reputation, leak, geo, browser integrity, and TLS consistency.
+        // Region risk floors are applied because unsupported locations are hard access risks.
         
         // S_ip
         let s_ip = 50;
@@ -629,18 +804,20 @@
         const s_tls = 0; // Standard browser client, no bot anomalies detected
 
         // Risk Summation
-        riskScore = 0.40 * s_ip + 0.25 * s_leak + 0.20 * s_geo + 0.15 * s_tls;
+        const s_region = region_policy.risk_score;
+        const s_browser = browser_integrity.risk_score;
+        const weightedRisk = 0.28 * s_region + 0.24 * s_ip + 0.20 * s_leak + 0.14 * s_geo + 0.10 * s_browser + 0.04 * s_tls;
+        riskScore = Math.max(weightedRisk, riskFloorFromRegionScore(s_region));
 
-        if (riskScore < 25) riskLevel = "低风险";
-        else if (riskScore < 50) riskLevel = "中风险";
-        else if (riskScore < 75) riskLevel = "高风险";
-        else riskLevel = "极高风险";
+        riskLevel = riskLevelFromScore(riskScore);
 
         report = {
           ip_info,
           ipqs_info,
           consistency,
           dns_leak: dns_report,
+          region_policy,
+          browser_integrity,
           tls_fingerprint
         };
 
@@ -712,7 +889,7 @@
     <!-- Left Column: Master Controller & Gauge -->
     <div class="col-left">
       <Dashboard {riskScore} {riskLevel} {isScanning} {report} onScan={performBrowserAudit} />
-      <div style="margin-top: 20px;">
+      <div class="settings-wrap">
         <SettingsCard bind:useMock bind:mockScenario />
       </div>
     </div>
@@ -783,9 +960,9 @@
   }
 
   .app-container {
-    max-width: 1280px;
+    max-width: 1760px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 14px 18px 10px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -793,8 +970,8 @@
   }
 
   .app-header {
-    margin-bottom: 40px;
-    padding-left: 12px;
+    margin-bottom: 12px;
+    padding-left: 4px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -810,8 +987,8 @@
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     color: var(--text-primary);
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -840,12 +1017,12 @@
   .brand {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
   }
 
   .pulse-dot {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background-color: #00f3ff;
     box-shadow: 0 0 10px #00f3ff;
@@ -860,7 +1037,7 @@
 
   .app-header h1 {
     font-family: 'Outfit', sans-serif;
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 900;
     letter-spacing: 2px;
     margin: 0;
@@ -887,18 +1064,18 @@
   }
 
   .subtitle {
-    font-size: 14px;
+    font-size: 12px;
     color: var(--text-muted);
-    margin: 6px 0 0 0;
+    margin: 4px 0 0 0;
     letter-spacing: 0.5px;
   }
 
   .grid-layout {
     display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: 30px;
+    grid-template-columns: minmax(286px, 310px) 1fr;
+    gap: 16px;
     flex-grow: 1;
-    align-items: stretch;
+    align-items: start;
   }
 
   @media (max-width: 900px) {
@@ -912,22 +1089,26 @@
     flex-direction: column;
     gap: 0;
     position: sticky;
-    top: 40px;
+    top: 14px;
   }
 
   .col-right {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    height: 100%;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .settings-wrap {
+    margin-top: 12px;
   }
 
   .app-footer {
-    margin-top: 50px;
+    margin-top: 10px;
     border-top: 1px solid var(--card-border);
-    padding-top: 20px;
+    padding-top: 8px;
     text-align: center;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
     display: flex;
     flex-direction: column;

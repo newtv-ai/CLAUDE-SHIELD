@@ -37,19 +37,27 @@
     
     const hasTimezoneConflict = report?.consistency?.timezone_match === false;
     const hasLanguageConflict = report?.consistency?.language_match === false;
+    const isUnsupportedRegion = report?.region_policy?.supported_region === false;
+    const hasBrowserIntegrityIssue = (report?.browser_integrity?.risk_score || 0) >= 70;
 
     if (riskScore >= 75) {
-      return "危险环境！检测到已被高频标记的机房 IP 或严重的 DNS/WebRTC 泄露，此时登录 Pro 账号将有 90% 以上几率遭遇秒封！";
+      if (isUnsupportedRegion) {
+        return "极高风险：当前出口地区不在 Claude 官方支持范围内，建议先切换到受支持地区的稳定网络环境。";
+      }
+      if (hasBrowserIntegrityIssue) {
+        return "极高风险：浏览器暴露自动化、无头或关键会话能力异常信号，容易触发平台风控。";
+      }
+      return "极高风险：检测到高风险出口网络或严重 DNS/WebRTC 泄露，建议先修复环境再登录。";
     } else if (riskScore >= 50) {
-      return "高风险！IP 属于商业托管区，或 DNS 发生暴露。频繁登录或发起长对话极易导致封号。";
+      return "高风险：IP 画像、DNS/WebRTC、地区或浏览器完整性存在明显异常，建议修复后再使用。";
     } else if (riskScore >= 25) {
-      return "检测到中度异常（通常为 WebRTC 暴露内网 IP 或时区与出口 IP 不一致）。建议调整后再登录。";
+      return "检测到中度异常，通常来自 WebRTC、时区语言、浏览器指纹或出口网络画像不一致。";
     } else {
       // 低风险 (< 25)
       if (hasTimezoneConflict || hasLanguageConflict) {
         return "基本网络纯净度良好，但检测到【时区或语言指纹冲突】。强烈建议在登录前使用一键脚本或手动调整系统时区为代理节点时区。";
       }
-      return "当前网络及物理指纹纯净度高，时区与语言对齐良好。可放心登录/使用 Claude。";
+      return "当前网络及浏览器环境未发现明显异常，时区、语言和出口地区对齐良好。";
     }
   });
 </script>
@@ -118,14 +126,13 @@
     background: var(--dashboard-bg);
     border: 1px solid var(--dashboard-border);
     backdrop-filter: blur(16px);
-    border-radius: 20px;
-    padding: 30px;
+    border-radius: 16px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
     align-items: center;
     overflow: hidden;
-    box-shadow: 0 20px 40px var(--shadow-color);
-    height: 100%;
+    box-shadow: 0 14px 28px var(--shadow-color);
     box-sizing: border-box;
     transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
   }
@@ -146,7 +153,7 @@
   .gauge-container {
     position: relative;
     width: 100%;
-    max-width: 280px;
+    max-width: 218px;
     z-index: 1;
   }
 
@@ -156,7 +163,7 @@
   }
 
   .score-num {
-    font-size: 32px;
+    font-size: 30px;
     font-weight: 800;
     text-anchor: middle;
     font-family: 'Outfit', 'Inter', sans-serif;
@@ -172,30 +179,30 @@
 
   .info-panel {
     text-align: center;
-    margin-top: 15px;
-    margin-bottom: 25px;
+    margin-top: 8px;
+    margin-bottom: 16px;
     z-index: 1;
     max-width: 360px;
   }
 
   .risk-badge {
     display: inline-block;
-    padding: 6px 16px;
+    padding: 5px 14px;
     border-radius: 30px;
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 1px;
     border: 1px solid;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     transition: all 0.5s ease;
   }
 
   .description {
-    font-size: 14px;
-    line-height: 1.6;
+    font-size: 13px;
+    line-height: 1.45;
     color: var(--text-secondary);
     margin: 0;
-    min-height: 48px;
+    min-height: 38px;
     transition: color 0.4s ease;
   }
 
@@ -203,12 +210,12 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    padding: 14px 28px;
-    border-radius: 12px;
+    padding: 12px 20px;
+    border-radius: 10px;
     border: 1px solid var(--card-border);
     background: var(--box-bg);
     color: var(--text-primary);
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     display: flex;

@@ -78,9 +78,9 @@
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     backdrop-filter: blur(12px);
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 10px 30px var(--shadow-color);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 8px 22px var(--shadow-color);
     width: 100%;
     box-sizing: border-box;
     display: flex;
@@ -91,15 +91,15 @@
   .header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 14px;
     border-bottom: 1px solid var(--card-border);
-    padding-bottom: 12px;
+    padding-bottom: 10px;
   }
 
   .header-icon {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     animation: rotate 15s linear infinite;
   }
 
@@ -110,7 +110,7 @@
 
   .header h3 {
     margin: 0;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: 0.5px;
@@ -119,13 +119,13 @@
   .settings-body {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 14px;
   }
 
   .setting-item {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
 
   .setting-item-row {
@@ -142,13 +142,13 @@
   }
 
   .setting-label {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
   }
 
   .setting-tip {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-muted);
     line-height: 1.4;
   }
@@ -159,8 +159,8 @@
   .switch {
     position: relative;
     display: inline-block;
-    width: 48px;
-    height: 24px;
+    width: 44px;
+    height: 22px;
     flex-shrink: 0;
   }
 
@@ -186,8 +186,8 @@
   .slider:before {
     position: absolute;
     content: "";
-    height: 16px;
-    width: 16px;
+    height: 14px;
+    width: 14px;
     left: 3px;
     bottom: 3px;
     background-color: var(--text-muted);
@@ -200,31 +200,31 @@
   }
 
   input:checked + .slider:before {
-    transform: translateX(24px);
+    transform: translateX(22px);
     background-color: #0b0f19;
   }
 
   /* Cyberpunk Preset Buttons Group */
   .scenario-select {
     border-top: 1px solid var(--card-border);
-    padding-top: 16px;
+    padding-top: 12px;
     animation: slideDown 0.3s ease;
   }
 
   .scenario-grid {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-top: 10px;
+    gap: 6px;
+    margin-top: 8px;
   }
 
   .scenario-btn {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     width: 100%;
-    padding: 10px 14px;
-    border-radius: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
     border: 1px solid var(--card-border);
     background: var(--box-bg);
     cursor: pointer;

@@ -43,6 +43,14 @@
             {report.ipqs_info?.connection_type || "未知"}
           </span>
         </div>
+        {#if report.region_policy}
+          <div class="data-row">
+            <span class="label">Claude 支持地区:</span>
+            <span class="value font-bold" class:safe={report.region_policy.supported_region} class:danger={!report.region_policy.supported_region}>
+              {report.region_policy.supported_region ? "支持" : "不支持"} ({report.region_policy.country_code})
+            </span>
+          </div>
+        {/if}
         
         {#if report.ipqs_info}
           <div class="fraud-section">
@@ -61,6 +69,9 @@
             <span class="status-badge" class:danger={report.ipqs_info.active_tor}>TOR: {report.ipqs_info.active_tor ? "检测到" : "无"}</span>
             <span class="status-badge" class:danger={report.ipqs_info.abuse_velocity !== 'none'}>滥用速度: {report.ipqs_info.abuse_velocity}</span>
           </div>
+        {/if}
+        {#if report.region_policy}
+          <p class="leak-description text-sm">{report.region_policy.flags[0]}</p>
         {/if}
       {:else}
         <div class="skeleton-loader">
@@ -105,7 +116,7 @@
         </div>
 
         <!-- WebRTC Leak Result -->
-        <div class="sub-section" style="margin-top: 15px;">
+        <div class="sub-section" style="margin-top: 10px;">
           <div class="sub-header">
             <span class="sub-title">WebRTC 穿透暴露:</span>
             <span class="status-indicator" class:safe={webrtcIps.length === 0} class:warn={webrtcIps.length > 0}>
@@ -169,7 +180,7 @@
           {/if}
         </div>
 
-        <div class="consistency-item" style="margin-top: 20px;">
+        <div class="consistency-item" style="margin-top: 10px;">
           <div class="cons-header">
             <span>系统语言环境 vs 出口IP属地</span>
             <span class="match-indicator" class:match={report.consistency.language_match}>
@@ -201,7 +212,7 @@
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
         <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
       </svg>
-      <h3>TLS 传输层指纹评估</h3>
+      <h3>TLS 与浏览器完整性</h3>
     </div>
     
     <div class="panel-content">
@@ -213,14 +224,14 @@
           </div>
         </div>
         
-        <div class="data-row" style="margin-top: 15px;">
+        <div class="data-row" style="margin-top: 10px;">
           <span class="label">仿真对齐判定:</span>
           <span class="value font-bold" class:safe={report.tls_fingerprint.ja4_match} class:danger={!report.tls_fingerprint.ja4_match}>
             {report.tls_fingerprint.ja4_match ? "安全：高仿真度浏览器特征" : "警告：检测到机器人/非标准指纹"}
           </span>
         </div>
 
-        <div class="fraud-section" style="margin-top: 10px;">
+        <div class="fraud-section" style="margin-top: 8px;">
           <div class="fraud-header">
             <span class="label">指纹拟合匹配度:</span>
             <span class="fraud-score-val" class:high={report.tls_fingerprint.match_score < 50}>
@@ -238,6 +249,31 @@
             当前请求的 TLS 握手协商细节（如密码套件顺序、ALPN配置）与声明的浏览器 User-Agent 不一致（例如直接暴露了底层 HTTP 库如 Rust reqwest 或 Python requests 的静态 TLS 指纹）。这会导致 Cloudflare Bot Management 触发秒封！
           </div>
         {/if}
+
+        {#if report.browser_integrity}
+          <div class="sub-section browser-integrity">
+            <div class="sub-header">
+              <span class="sub-title">浏览器自动化与会话能力:</span>
+              <span class="status-indicator" class:safe={report.browser_integrity.risk_score === 0} class:danger={report.browser_integrity.risk_score >= 70} class:warn={report.browser_integrity.risk_score > 0 && report.browser_integrity.risk_score < 70}>
+                {report.browser_integrity.risk_score === 0 ? "正常" : "异常信号"}
+              </span>
+            </div>
+            <div class="badge-row">
+              <span class="status-badge" class:danger={report.browser_integrity.webdriver}>webdriver: {report.browser_integrity.webdriver ? "暴露" : "无"}</span>
+              <span class="status-badge" class:danger={report.browser_integrity.is_headless}>Headless: {report.browser_integrity.is_headless ? "是" : "否"}</span>
+              <span class="status-badge" class:danger={!report.browser_integrity.cookie_enabled}>Cookie: {report.browser_integrity.cookie_enabled ? "可用" : "禁用"}</span>
+              <span class="status-badge" class:danger={!report.browser_integrity.storage_available}>Storage: {report.browser_integrity.storage_available ? "可用" : "异常"}</span>
+            </div>
+            <div class="cons-body font-mono text-xs browser-meta">
+              <div>平台: <span class="highlight">{report.browser_integrity.platform}</span> / CH: <span class="highlight">{report.browser_integrity.user_agent_platform}</span></div>
+              <div>语言: <span class="highlight">{report.browser_integrity.languages.join(", ") || "未知"}</span></div>
+              <div>插件数: <span class="highlight">{report.browser_integrity.plugins_count}</span> / 屏幕: <span class="highlight">{report.browser_integrity.screen}</span></div>
+            </div>
+            {#each report.browser_integrity.issues as issue}
+              <p class="fix-tip">{issue}</p>
+            {/each}
+          </div>
+        {/if}
       {:else}
         <div class="skeleton-loader">
           <div class="sk-line"></div>
@@ -252,20 +288,27 @@
 <style>
   .details-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
     width: 100%;
     margin-top: 0;
     box-sizing: border-box;
+    align-items: start;
+  }
+
+  @media (min-width: 1360px) {
+    .details-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
   }
 
   .card-panel {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     backdrop-filter: blur(12px);
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 10px 30px var(--shadow-color);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 8px 22px var(--shadow-color);
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -275,20 +318,20 @@
   .panel-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 9px;
+    margin-bottom: 12px;
     border-bottom: 1px solid var(--card-border);
-    padding-bottom: 12px;
+    padding-bottom: 9px;
   }
 
   .panel-icon {
-    width: 24px;
-    height: 24px;
+    width: 21px;
+    height: 21px;
   }
 
   .panel-header h3 {
     margin: 0;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: 0.5px;
@@ -306,8 +349,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    font-size: 14px;
+    margin-bottom: 7px;
+    font-size: 12px;
   }
 
   .label {
@@ -340,6 +383,14 @@
     color: var(--color-warning);
   }
 
+  .safe {
+    color: var(--color-accent);
+  }
+
+  .danger {
+    color: var(--color-danger);
+  }
+
   .font-bold {
     font-weight: 700;
   }
@@ -349,15 +400,15 @@
   }
 
   .fraud-section {
-    margin-top: 15px;
-    margin-bottom: 15px;
+    margin-top: 8px;
+    margin-bottom: 8px;
   }
 
   .fraud-header {
     display: flex;
     justify-content: space-between;
-    font-size: 13px;
-    margin-bottom: 6px;
+    font-size: 12px;
+    margin-bottom: 5px;
   }
 
   .fraud-score-val {
@@ -390,13 +441,13 @@
   .badge-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     margin-top: 5px;
   }
 
   .status-badge {
-    font-size: 11px;
-    padding: 3px 8px;
+    font-size: 10px;
+    padding: 3px 7px;
     border-radius: 4px;
     background: var(--box-bg);
     border: 1px solid var(--card-border);
@@ -412,7 +463,7 @@
 
   .sub-section {
     border-left: 2px solid var(--card-border);
-    padding-left: 12px;
+    padding-left: 9px;
     transition: border-color 0.4s ease;
   }
 
@@ -424,14 +475,14 @@
   }
 
   .sub-title {
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--text-primary);
     transition: color 0.4s ease;
   }
 
   .status-indicator {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     padding: 2px 6px;
     border-radius: 4px;
@@ -455,21 +506,21 @@
   .leak-description {
     color: var(--text-muted);
     margin-top: 4px;
-    margin-bottom: 8px;
-    line-height: 1.5;
+    margin-bottom: 5px;
+    line-height: 1.32;
   }
 
   .dns-server-list {
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--card-border);
     border-radius: 8px;
-    padding: 8px 12px;
-    max-height: 90px;
+    padding: 6px 10px;
+    max-height: 72px;
     overflow-y: auto;
   }
 
   .dns-item {
-    padding: 3px 0;
+    padding: 2px 0;
     color: var(--text-secondary);
   }
 
@@ -481,7 +532,7 @@
 
   .webrtc-item {
     color: var(--text-secondary);
-    padding: 4px 8px;
+    padding: 3px 7px;
     background: var(--box-bg);
     border-radius: 4px;
     display: flex;
@@ -520,8 +571,8 @@
   .consistency-item {
     background: var(--sub-item-bg);
     border: 1px solid var(--card-border);
-    border-radius: 12px;
-    padding: 14px;
+    border-radius: 10px;
+    padding: 9px;
     transition: background 0.4s ease, border-color 0.4s ease;
   }
 
@@ -529,9 +580,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
-    margin-bottom: 10px;
+    margin-bottom: 7px;
     color: var(--text-primary);
     transition: color 0.4s ease;
   }
@@ -552,28 +603,28 @@
   .cons-body {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 3px;
     color: var(--text-secondary);
     transition: color 0.4s ease;
   }
 
   .fix-tip {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--color-warning-text);
-    margin: 8px 0 0 0;
-    line-height: 1.5;
+    margin: 5px 0 0 0;
+    line-height: 1.3;
   }
 
   .ja4-box {
     background: var(--box-bg);
     border: 1px solid var(--card-border);
     border-radius: 8px;
-    padding: 12px;
+    padding: 8px 9px;
     margin-top: 6px;
     word-break: break-all;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--color-accent);
-    line-height: 1.5;
+    line-height: 1.3;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
     transition: background 0.4s ease, border-color 0.4s ease;
   }
@@ -582,21 +633,29 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .bot-warning {
-    margin-top: 15px;
-    padding: 10px 14px;
+    margin-top: 10px;
+    padding: 8px 10px;
     background: rgba(255, 0, 85, 0.08);
     border-color: rgba(255, 0, 85, 0.25);
-    font-size: 11px;
-    line-height: 1.5;
+    font-size: 10px;
+    line-height: 1.35;
     color: var(--text-secondary);
   }
 
   .bot-warning strong {
     color: var(--color-danger);
+  }
+
+  .browser-integrity {
+    margin-top: 10px;
+  }
+
+  .browser-meta {
+    margin-top: 6px;
   }
 
   /* Skeleton Screen Styles */

@@ -96,10 +96,10 @@
         </div>
         <div class="data-row">
           <span class="label">风控综合评级:</span>
-          <span class="value font-bold text-truncate" title={asnRating.desc}>
-            <span style="color: {congestion.color}; margin-right: 6px;">{asnRating.grade}</span>
-            <span style="font-size: 10px; font-weight: normal; color: var(--text-muted);">{asnRating.desc}</span>
-          </span>
+          <span class="value font-bold" style="color: {congestion.color}">{asnRating.grade}</span>
+        </div>
+        <div class="data-desc-row">
+          {asnRating.desc}
         </div>
         
         {#if report.ipqs_info}
@@ -410,6 +410,15 @@
     align-items: center;
     margin-bottom: 7px;
     font-size: 12px;
+  }
+
+  .data-desc-row {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: -4px;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    text-align: right;
   }
 
   .label {

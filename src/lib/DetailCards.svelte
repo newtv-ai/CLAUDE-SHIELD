@@ -9,6 +9,41 @@
   function getStatusText(success: boolean) {
     return success ? "对齐/安全" : "异常/冲突";
   }
+
+  // 拥挤度及评级计算逻辑
+  function evaluateCongestion(isp: string = "", org: string = "") {
+    const haystack = (isp + " " + org).toLowerCase();
+    const highCongestionKeywords = [
+      "amazon", "aws", "google", "microsoft", "azure", "oracle", "digitalocean",
+      "linode", "akamai", "ovh", "hetzner", "vultr", "contabo", "choopa", "leaseweb", "m247"
+    ];
+    if (highCongestionKeywords.some(kw => haystack.includes(kw))) {
+      return { level: "拥挤 (多人公用/易连带风控)", color: "#ff0055" };
+    }
+    const isHosting = haystack.includes("hosting") || haystack.includes("server") || haystack.includes("vps") || haystack.includes("datacenter") || haystack.includes("data center") || haystack.includes("fastnet");
+    if (isHosting) {
+      return { level: "低拥挤 (自建独立机房/较稳定)", color: "#ffaa00" };
+    }
+    return { level: "独占 (原生住宅IP/极安全)", color: "#00f3ff" };
+  }
+
+  function evaluateAsnRating(isp: string = "", org: string = "", fraudScore: number = 0) {
+    const haystack = (isp + " " + org).toLowerCase();
+    const cloudBigThree = ["amazon", "aws", "google", "microsoft", "azure", "oracle"];
+    const standardClouds = ["digitalocean", "linode", "ovh", "hetzner", "vultr", "contabo"];
+    
+    if (cloudBigThree.some(kw => haystack.includes(kw))) {
+      return { grade: "C级 (公共大厂云)", desc: "滥用度高，易连带被秒封" };
+    }
+    if (standardClouds.some(kw => haystack.includes(kw)) || fraudScore > 65) {
+      return { grade: "B-级 (常见IDC云段)", desc: "用户密集，需防范连带限制" };
+    }
+    const isHosting = haystack.includes("hosting") || haystack.includes("server") || haystack.includes("vps") || haystack.includes("datacenter") || haystack.includes("fastnet");
+    if (isHosting) {
+      return { grade: "B+级 (冷门独立机房)", desc: "独立性较好，稳定合规登录" };
+    }
+    return { grade: "A+级 (原生宽带/家宽)", desc: "信誉极佳，Claude 认可度最高" };
+  }
 </script>
 
 <div class="details-grid">
@@ -21,6 +56,7 @@
         <path d="M2 12h20"/>
       </svg>
       <h3>IP信誉与托管画像</h3>
+      <span class="engine-tag">物理核验引擎: ipwho.is 实时库</span>
     </div>
     
     <div class="panel-content">
@@ -51,6 +87,20 @@
             </span>
           </div>
         {/if}
+
+        {@const congestion = evaluateCongestion(report.ip_info.isp, report.ip_info.org)}
+        {@const asnRating = evaluateAsnRating(report.ip_info.isp, report.ip_info.org, report.ipqs_info?.fraud_score)}
+        <div class="data-row">
+          <span class="label">节点承载拥挤度:</span>
+          <span class="value font-bold" style="color: {congestion.color}">{congestion.level}</span>
+        </div>
+        <div class="data-row">
+          <span class="label">风控综合评级:</span>
+          <span class="value font-bold text-truncate" title={asnRating.desc}>
+            <span style="color: {congestion.color}; margin-right: 6px;">{asnRating.grade}</span>
+            <span style="font-size: 10px; font-weight: normal; color: var(--text-muted);">{asnRating.desc}</span>
+          </span>
+        </div>
         
         {#if report.ipqs_info}
           <div class="fraud-section">
@@ -63,11 +113,6 @@
             <div class="progress-bar-bg">
               <div class="progress-bar" style="width: {report.ipqs_info.fraud_score}%; background: {report.ipqs_info.fraud_score > 50 ? '#ff0055' : report.ipqs_info.fraud_score >= 15 ? '#ffaa00' : '#00f3ff'}"></div>
             </div>
-          </div>
-          <div class="badge-row">
-            <span class="status-badge" class:danger={report.ipqs_info.active_vpn}>VPN: {report.ipqs_info.active_vpn ? "检测到" : "无"}</span>
-            <span class="status-badge" class:danger={report.ipqs_info.active_tor}>TOR: {report.ipqs_info.active_tor ? "检测到" : "无"}</span>
-            <span class="status-badge" class:danger={report.ipqs_info.abuse_velocity !== 'none'}>滥用速度: {report.ipqs_info.abuse_velocity}</span>
           </div>
         {/if}
         {#if report.region_policy}
@@ -339,6 +384,17 @@
     color: var(--text-primary);
     letter-spacing: 0.5px;
     transition: color 0.4s ease;
+  }
+
+  .engine-tag {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--box-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--card-border);
+    margin-left: auto;
   }
 
   .panel-content {

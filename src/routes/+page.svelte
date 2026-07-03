@@ -193,26 +193,6 @@
     };
   }
 
-  async function fetchIpApiLookup(): Promise<ExitIpInfo> {
-    if (typeof window !== "undefined" && window.location.protocol === "https:") {
-      throw new Error("Skipping ip-api on HTTPS to avoid mixed-content blocking");
-    }
-
-    const res = await fetchWithTimeout(`http://ip-api.com/json/?fields=61439&t=${Date.now()}`, IP_LOOKUP_TIMEOUT_MS, {
-      cache: "no-store"
-    });
-    if (!res.ok) throw new Error("ip-api lookup failed");
-
-    const raw = await res.json();
-    if (raw?.status !== "success" || !raw?.query) throw new Error(raw?.message || "ip-api lookup failed");
-
-    return {
-      ...raw,
-      source: "ip-api.com",
-      connectionType: raw.hosting ? "hosting" : raw.proxy ? "proxy" : raw.mobile ? "mobile" : "residential"
-    };
-  }
-
   function mergeTraceIntoIpInfo(ipInfo: ExitIpInfo, trace: Record<string, string> | null): ExitIpInfo {
     if (!trace) return ipInfo;
 
@@ -243,22 +223,18 @@
   }
 
   async function fetchExitIpInfo(): Promise<ExitIpInfo> {
-    const canUseIpApi = typeof window !== "undefined" && window.location.protocol !== "https:";
-    const lookupPromises = canUseIpApi
-      ? [fetchIpApiLookup(), fetchIpWhoisLookup()]
-      : [fetchIpWhoisLookup()];
-
-    const settled = await Promise.allSettled([fetchCloudflareTrace(), ...lookupPromises]);
+    // 无论是本地部署还是 GitHub，都统一使用 https://ipwho.is 检测，保障数据一致性与安全性
+    const settled = await Promise.allSettled([
+      fetchCloudflareTrace(),
+      fetchIpWhoisLookup()
+    ]);
     const trace = settled[0].status === "fulfilled" ? settled[0].value : null;
-    const ipInfo = settled
-      .slice(1)
-      .find((result): result is PromiseFulfilledResult<ExitIpInfo> => result.status === "fulfilled")
-      ?.value;
+    const ipInfo = settled[1].status === "fulfilled" ? settled[1].value : null;
 
     if (ipInfo) return mergeTraceIntoIpInfo(ipInfo, trace);
     if (trace?.ip) return fallbackIpInfoFromTrace(trace);
 
-    throw new Error("Unable to fetch exit IP information from the available providers");
+    throw new Error("出口地理位置 IP 获取失败，请检查网络连接");
   }
 
   function estimateIpReputation(ip_info: ExitIpInfo) {
@@ -268,11 +244,16 @@
     const is_mobile = ip_info.mobile || connectionType === "mobile";
 
     if (is_hosting) {
-      return { success: true, fraud_score: 85, connection_type: "datacenter/hosting", abuse_velocity: "medium", active_vpn: true, active_tor: false };
+      // 并非一刀切。AWS、DO、Linode等公共大厂云 IP 评定为高风险 80分；其余自建或冷门独立机房 IP 评定为中度风险 45分
+      const haystack = (ip_info.isp + " " + (ip_info.org || "")).toLowerCase();
+      const bigCloudKeywords = ["amazon", "aws", "google", "microsoft", "azure", "digitalocean", "linode", "vultr", "hetzner", "ovh", "contabo"];
+      const isBigCloud = bigCloudKeywords.some(kw => haystack.includes(kw));
+      const score = isBigCloud ? 80 : 45;
+      return { success: true, fraud_score: score, connection_type: "datacenter/hosting", abuse_velocity: "medium", active_vpn: false, active_tor: false };
     }
 
     if (is_proxy) {
-      return { success: true, fraud_score: 75, connection_type: "datacenter/proxy", abuse_velocity: "low", active_vpn: true, active_tor: false };
+      return { success: true, fraud_score: 75, connection_type: "datacenter/proxy", abuse_velocity: "low", active_vpn: false, active_tor: false };
     }
 
     if (is_mobile) {

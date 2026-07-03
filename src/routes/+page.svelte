@@ -2,7 +2,6 @@
   import { onMount } from "svelte";
   import Dashboard from "../lib/Dashboard.svelte";
   import DetailCards from "../lib/DetailCards.svelte";
-  import SettingsCard from "../lib/SettingsCard.svelte";
   import { detectWebRtcIps } from "../lib/webrtc";
 
   // System states using Svelte 5 state runes
@@ -11,10 +10,6 @@
   let isScanning = $state(false);
   let report = $state<any | null>(null);
   let webrtcIps = $state<string[]>([]);
-  
-  // Settings states
-  let useMock = $state(false);
-  let mockScenario = $state("clean");
 
   // Theme state
   let currentTheme = $state("dark");
@@ -43,171 +38,7 @@
     }
   });
 
-  // Mock Scenario Data Map
-  const mockReports: Record<string, any> = {
-    clean: {
-      ip_info: {
-        status: "success",
-        query: "185.220.101.5",
-        country: "United States",
-        countryCode: "US",
-        timezone: "America/New_York",
-        isp: "Comcast Cable Communications",
-        mobile: false,
-        proxy: false,
-        hosting: false
-      },
-      ipqs_info: {
-        success: true,
-        fraud_score: 5,
-        connection_type: "residential",
-        abuse_velocity: "none",
-        active_vpn: false,
-        active_tor: false
-      },
-      consistency: {
-        system_timezone: "America/New_York",
-        system_language: "en-US",
-        timezone_match: true,
-        language_match: true
-      },
-      dns_leak: {
-        dns_leak_detected: false,
-        dns_servers: ["172.56.21.4 (US)", "172.56.21.5 (US)"],
-        leak_details: "共检测到 2 个 DNS 解析服务器，均位于美国，未发现代理穿透泄露风险。"
-      },
-      tls_fingerprint: {
-        ja4_fingerprint: "t13d1516h2_8daaf6152771_02713d6af862 (Chrome/Edge Standard)",
-        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        ja4_match: true,
-        match_score: 100
-      },
-      risk_score: 4.5,
-      risk_level: "低风险"
-    },
-    warning: {
-      ip_info: {
-        status: "success",
-        query: "192.210.211.34",
-        country: "United States",
-        countryCode: "US",
-        timezone: "America/Los_Angeles",
-        isp: "ColoCrossing",
-        mobile: false,
-        proxy: false,
-        hosting: false
-      },
-      ipqs_info: {
-        success: true,
-        fraud_score: 28,
-        connection_type: "corporate",
-        abuse_velocity: "low",
-        active_vpn: true,
-        active_tor: false
-      },
-      consistency: {
-        system_timezone: "Asia/Shanghai",
-        system_language: "zh-CN",
-        timezone_match: false,
-        language_match: false
-      },
-      dns_leak: {
-        dns_leak_detected: false,
-        dns_servers: ["74.120.15.2 (US)"],
-        leak_details: "检测到 1 个 DNS 解析服务器。您的 DNS 流量未暴露国内节点，但系统环境有标记隐患。"
-      },
-      tls_fingerprint: {
-        ja4_fingerprint: "t13d1516h2_8daaf6152771_02713d6af862 (Chrome/Edge Standard)",
-        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        ja4_match: true,
-        match_score: 90
-      },
-      risk_score: 36.2,
-      risk_level: "中风险",
-      webrtc: ["192.168.1.14", "223.104.40.85"]
-    },
-    high_risk: {
-      ip_info: {
-        status: "success",
-        query: "45.79.112.56",
-        country: "United States",
-        countryCode: "US",
-        timezone: "America/New_York",
-        isp: "Linode LLC",
-        mobile: false,
-        proxy: true,
-        hosting: true
-      },
-      ipqs_info: {
-        success: true,
-        fraud_score: 82,
-        connection_type: "datacenter",
-        abuse_velocity: "medium",
-        active_vpn: true,
-        active_tor: false
-      },
-      consistency: {
-        system_timezone: "Asia/Shanghai",
-        system_language: "zh-CN",
-        timezone_match: false,
-        language_match: false
-      },
-      dns_leak: {
-        dns_leak_detected: true,
-        dns_servers: ["202.96.128.86 (CN)", "114.114.114.114 (CN)"],
-        leak_details: "检测到严重 DNS 泄露！您的海外代理出口 IP 属地为 US，但本地 DNS 解析包经由国内电信运营商节点直接流出，暴露出真实国别。"
-      },
-      tls_fingerprint: {
-        ja4_fingerprint: "t13d1516h2_8daaf6152771_02713d6af862 (Chrome/Edge Standard)",
-        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        ja4_match: true,
-        match_score: 95
-      },
-      risk_score: 63.0,
-      risk_level: "高风险"
-    },
-    severe: {
-      ip_info: {
-        status: "success",
-        query: "198.51.100.12",
-        country: "United States",
-        countryCode: "US",
-        timezone: "America/Chicago",
-        isp: "DigitalOcean LLC",
-        mobile: false,
-        proxy: true,
-        hosting: true
-      },
-      ipqs_info: {
-        success: true,
-        fraud_score: 95,
-        connection_type: "datacenter/hosting",
-        abuse_velocity: "high",
-        active_vpn: true,
-        active_tor: false
-      },
-      consistency: {
-        system_timezone: "Asia/Shanghai",
-        system_language: "zh-CN",
-        timezone_match: false,
-        language_match: false
-      },
-      dns_leak: {
-        dns_leak_detected: true,
-        dns_servers: ["202.96.128.166 (CN)", "114.114.114.114 (CN)"],
-        leak_details: "检测到 DNS 泄露！DNS 请求经由中国境内解析服务器处理，风控系统在握手初期可直接识别真实物理属地。"
-      },
-      tls_fingerprint: {
-        ja4_fingerprint: "t13d1516h2_raw_reqwest_signature_mismatch (Rust reqwest)",
-        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        ja4_match: false,
-        match_score: 20
-      },
-      risk_score: 90.0,
-      risk_level: "极高风险",
-      webrtc: ["192.168.1.100", "117.136.38.10"]
-    }
-  };
+  // Exit IP Info Schema definition
 
   type ExitIpInfo = {
     status: "success";
@@ -670,46 +501,8 @@
     report = null;
     webrtcIps = [];
 
-    if (useMock) {
-      // Run mock scenario loader with fake delay
-      setTimeout(() => {
-        const scenarioData = mockReports[mockScenario];
-        const region_policy = assessRegionPolicy(scenarioData.ip_info);
-        const browser_integrity = scenarioData.browser_integrity || {
-          risk_score: scenarioData.tls_fingerprint?.ja4_match ? 0 : 85,
-          webdriver: false,
-          is_headless: !scenarioData.tls_fingerprint?.ja4_match,
-          cookie_enabled: true,
-          storage_available: true,
-          platform_mismatch: false,
-          user_agent: scenarioData.tls_fingerprint?.user_agent || "Mock Browser",
-          platform: "Win32",
-          user_agent_platform: "Windows",
-          languages: [scenarioData.consistency.system_language],
-          plugins_count: scenarioData.tls_fingerprint?.ja4_match ? 5 : 0,
-          hardware_concurrency: 8,
-          device_memory: 8,
-          screen: "1920x1080@1",
-          issues: scenarioData.tls_fingerprint?.ja4_match
-            ? ["演示模式：未发现明显浏览器自动化特征。"]
-            : ["演示模式：模拟非标准自动化客户端指纹。"]
-        };
-
-        riskScore = Math.max(scenarioData.risk_score, riskFloorFromRegionScore(region_policy.risk_score), browser_integrity.risk_score * 0.55);
-        riskLevel = riskLevelFromScore(riskScore);
-        report = {
-          ...scenarioData,
-          region_policy,
-          browser_integrity
-        };
-        if (scenarioData.webrtc) {
-          webrtcIps = scenarioData.webrtc;
-        }
-        isScanning = false;
-      }, 2000);
-    } else {
-      // Run REAL audit in standard browser environment!
-      try {
+    // Run REAL audit in standard browser environment!
+    try {
         const webRtcPromise = detectWebRtcIps().catch((e) => {
           console.warn("WebRTC scanning failed:", e);
           return [];
@@ -823,11 +616,10 @@
 
       } catch (err: any) {
         console.error("Browser real audit error:", err);
-        alert(`真实环境扫描失败: ${err.message || err}。请切换至演示/Mock模式进行功能演示。`);
+        alert(`真实环境扫描失败: ${err.message || err}`);
       } finally {
         isScanning = false;
       }
-    }
   }
 
   function matchLanguageWithCountry(countryCode: string, langPrefix: string): boolean {
@@ -890,9 +682,6 @@
     <div class="col-left">
       <div class="dashboard-wrap">
         <Dashboard {riskScore} {riskLevel} {isScanning} {report} onScan={performBrowserAudit} />
-      </div>
-      <div class="settings-wrap">
-        <SettingsCard bind:useMock bind:mockScenario />
       </div>
     </div>
 
@@ -1112,9 +901,6 @@
     align-self: stretch;
   }
 
-  .settings-wrap {
-    margin-top: 0;
-  }
 
   .app-footer {
     margin-top: 10px;

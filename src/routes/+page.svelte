@@ -1072,8 +1072,8 @@
 
   .grid-layout {
     display: grid;
-    grid-template-columns: minmax(286px, 310px) 1fr;
-    gap: 16px;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
     flex-grow: 1;
     align-items: start;
   }
@@ -1082,12 +1082,15 @@
     .grid-layout {
       grid-template-columns: 1fr;
     }
+    .col-left {
+      position: static !important;
+    }
   }
 
   .col-left {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 16px;
     position: sticky;
     top: 14px;
   }
@@ -1095,12 +1098,12 @@
   .col-right {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
     min-width: 0;
   }
 
   .settings-wrap {
-    margin-top: 12px;
+    margin-top: 0;
   }
 
   .app-footer {

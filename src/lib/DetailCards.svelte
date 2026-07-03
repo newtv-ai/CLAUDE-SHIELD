@@ -288,17 +288,17 @@
 <style>
   .details-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 12px;
+    grid-template-columns: 1fr;
+    gap: 16px;
     width: 100%;
     margin-top: 0;
     box-sizing: border-box;
-    align-items: start;
+    align-items: stretch;
   }
 
-  @media (min-width: 1360px) {
+  @media (min-width: 1024px) {
     .details-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 

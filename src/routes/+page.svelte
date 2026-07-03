@@ -888,7 +888,9 @@
   <div class="grid-layout">
     <!-- Left Column: Master Controller & Gauge -->
     <div class="col-left">
-      <Dashboard {riskScore} {riskLevel} {isScanning} {report} onScan={performBrowserAudit} />
+      <div class="dashboard-wrap">
+        <Dashboard {riskScore} {riskLevel} {isScanning} {report} onScan={performBrowserAudit} />
+      </div>
       <div class="settings-wrap">
         <SettingsCard bind:useMock bind:mockScenario />
       </div>
@@ -1093,6 +1095,13 @@
     gap: 16px;
     position: sticky;
     top: 14px;
+    align-self: stretch;
+  }
+
+  .dashboard-wrap {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   .col-right {
@@ -1100,6 +1109,7 @@
     flex-direction: column;
     gap: 16px;
     min-width: 0;
+    align-self: stretch;
   }
 
   .settings-wrap {

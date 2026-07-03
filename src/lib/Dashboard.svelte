@@ -135,6 +135,9 @@
     box-shadow: 0 14px 28px var(--shadow-color);
     box-sizing: border-box;
     transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+    height: 100%;
+    justify-content: space-between;
+    min-height: 400px;
   }
 
   .glow-effect {

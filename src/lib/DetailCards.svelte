@@ -299,6 +299,8 @@
   @media (min-width: 1024px) {
     .details-grid {
       grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: 1fr 1fr;
+      height: 100%;
     }
   }
 
@@ -313,6 +315,7 @@
     flex-direction: column;
     box-sizing: border-box;
     transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+    height: 100%;
   }
 
   .panel-header {
@@ -662,8 +665,11 @@
   .skeleton-loader {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
     width: 100%;
+    height: 100%;
+    flex-grow: 1;
+    justify-content: space-between;
   }
 
   .sk-line, .sk-line-short, .sk-bar, .sk-block {
@@ -690,7 +696,7 @@
   }
 
   .sk-block {
-    height: 80px;
+    height: 160px;
     width: 100%;
     border-radius: 8px;
   }

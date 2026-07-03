@@ -150,7 +150,7 @@
   }
 
   async function fetchCloudflareTrace() {
-    const res = await fetchWithTimeout("https://www.cloudflare.com/cdn-cgi/trace", IP_LOOKUP_TIMEOUT_MS, {
+    const res = await fetchWithTimeout(`https://www.cloudflare.com/cdn-cgi/trace?t=${Date.now()}`, IP_LOOKUP_TIMEOUT_MS, {
       cache: "no-store"
     });
     if (!res.ok) throw new Error("Cloudflare trace failed");
@@ -158,7 +158,7 @@
   }
 
   async function fetchIpWhoisLookup(): Promise<ExitIpInfo> {
-    const res = await fetchWithTimeout("https://ipwho.is/", IP_LOOKUP_TIMEOUT_MS, {
+    const res = await fetchWithTimeout(`https://ipwho.is/?t=${Date.now()}`, IP_LOOKUP_TIMEOUT_MS, {
       cache: "no-store"
     });
     if (!res.ok) throw new Error("IPWHOIS lookup failed");
@@ -198,7 +198,7 @@
       throw new Error("Skipping ip-api on HTTPS to avoid mixed-content blocking");
     }
 
-    const res = await fetchWithTimeout("http://ip-api.com/json/?fields=61439", IP_LOOKUP_TIMEOUT_MS, {
+    const res = await fetchWithTimeout(`http://ip-api.com/json/?fields=61439&t=${Date.now()}`, IP_LOOKUP_TIMEOUT_MS, {
       cache: "no-store"
     });
     if (!res.ok) throw new Error("ip-api lookup failed");

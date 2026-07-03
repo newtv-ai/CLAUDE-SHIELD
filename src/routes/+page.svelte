@@ -632,7 +632,7 @@
         <h1>CLAUDE <span class="accent-text">SHIELD</span></h1>
         <span class="version-tag">Web v2.0-Light</span>
       </div>
-      <p class="subtitle">极轻量 Claude 账户环境安全与风控穿透检测系统</p>
+      <p class="subtitle">免责声明：本站检测结果均基于公开风控规则与本地库启发式估算得出，仅供学术交流与技术参考，不构成任何最终登录可用性担保。</p>
     </div>
     
     <button class="theme-toggle-btn" onclick={toggleTheme} aria-label="切换主题风格">
@@ -674,7 +674,6 @@
 
   <footer class="app-footer">
     <p>© 2026 Claude Shield. 纯 Web 绿盟安全评估版（零依赖、轻量化）。</p>
-    <p class="disclaimer">免责声明：本站提供之检测数据与风险评估等级均基于公开风控规则与本地特征数据库交叉估算得出，结果仅供学术交流与技术参考，不构成任何最终登录可用性或账户安全性担保。</p>
   </footer>
 </main>
 
@@ -893,15 +892,7 @@
     color: var(--text-muted);
     display: flex;
     flex-direction: column;
-    gap: 4px;
-  }
-
-  .disclaimer {
-    font-size: 9.5px;
-    color: rgba(255, 255, 255, 0.25);
-    line-height: 1.4;
-    max-width: 800px;
-    margin: 0 auto;
+    gap: 6px;
   }
 
 </style>

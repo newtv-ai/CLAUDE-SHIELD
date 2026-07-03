@@ -43,11 +43,11 @@ export async function detectWebRtcIps(): Promise<string[]> {
           reject(err);
         });
 
-      // 8 seconds timeout fallback
+      // Keep the UI responsive when STUN servers are blocked or slow.
       setTimeout(() => {
         try { pc.close(); } catch(e) {}
         resolve(discoveredIps);
-      }, 8000);
+      }, 4000);
       
     } catch (err) {
       reject(err);

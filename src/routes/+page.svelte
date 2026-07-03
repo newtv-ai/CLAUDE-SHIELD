@@ -209,6 +209,255 @@
     }
   };
 
+  type ExitIpInfo = {
+    status: "success";
+    query: string;
+    country: string;
+    countryCode: string;
+    timezone: string;
+    isp: string;
+    mobile: boolean;
+    proxy: boolean;
+    hosting: boolean;
+    source?: string;
+    city?: string;
+    regionName?: string;
+    asn?: number | string;
+    org?: string;
+    connectionType?: string;
+  };
+
+  const IP_LOOKUP_TIMEOUT_MS = 2200;
+  const DNS_LOOKUP_TIMEOUT_MS = 2500;
+
+  async function fetchWithTimeout(url: string, timeoutMs: number, init: RequestInit = {}): Promise<Response> {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      return await fetch(url, {
+        ...init,
+        signal: controller.signal
+      });
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
+  function parseCloudflareTrace(traceText: string): Record<string, string> {
+    return traceText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .reduce<Record<string, string>>((acc, line) => {
+        const separatorIndex = line.indexOf("=");
+        if (separatorIndex > -1) {
+          acc[line.slice(0, separatorIndex)] = line.slice(separatorIndex + 1);
+        }
+        return acc;
+      }, {});
+  }
+
+  function classifyConnectionType(...values: Array<string | number | undefined | null>) {
+    const haystack = values.filter(Boolean).join(" ").toLowerCase();
+    const mobileKeywords = ["mobile", "cellular", "wireless", "lte", "5g", "4g"];
+    const proxyKeywords = ["vpn", "proxy", "tor", "anonymous", "privacy"];
+    const hostingKeywords = [
+      "hosting",
+      "host",
+      "cloud",
+      "datacenter",
+      "data center",
+      "colo",
+      "colocation",
+      "vps",
+      "server",
+      "digitalocean",
+      "linode",
+      "akamai",
+      "amazon",
+      "aws",
+      "google",
+      "microsoft",
+      "azure",
+      "oracle",
+      "ovh",
+      "hetzner",
+      "vultr",
+      "contabo",
+      "choopa",
+      "leaseweb",
+      "m247",
+      "fastnet data",
+      "bluewave"
+    ];
+
+    if (mobileKeywords.some((keyword) => haystack.includes(keyword))) return "mobile";
+    if (proxyKeywords.some((keyword) => haystack.includes(keyword))) return "proxy";
+    if (hostingKeywords.some((keyword) => haystack.includes(keyword))) return "hosting";
+    return "residential";
+  }
+
+  async function fetchCloudflareTrace() {
+    const res = await fetchWithTimeout("https://www.cloudflare.com/cdn-cgi/trace", IP_LOOKUP_TIMEOUT_MS, {
+      cache: "no-store"
+    });
+    if (!res.ok) throw new Error("Cloudflare trace failed");
+    return parseCloudflareTrace(await res.text());
+  }
+
+  async function fetchIpWhoisLookup(): Promise<ExitIpInfo> {
+    const res = await fetchWithTimeout("https://ipwho.is/", IP_LOOKUP_TIMEOUT_MS, {
+      cache: "no-store"
+    });
+    if (!res.ok) throw new Error("IPWHOIS lookup failed");
+
+    const raw = await res.json();
+    if (!raw?.success || !raw?.ip) throw new Error(raw?.message || "IPWHOIS lookup failed");
+
+    const connectionType = classifyConnectionType(
+      raw.type,
+      raw.connection?.isp,
+      raw.connection?.org,
+      raw.connection?.domain,
+      raw.connection?.asn
+    );
+
+    return {
+      status: "success",
+      query: raw.ip,
+      country: raw.country || "Unknown",
+      countryCode: raw.country_code || "",
+      timezone: raw.timezone?.id || "",
+      isp: raw.connection?.isp || raw.connection?.org || "Unknown",
+      mobile: connectionType === "mobile",
+      proxy: connectionType === "proxy",
+      hosting: connectionType === "hosting",
+      source: "ipwho.is",
+      city: raw.city,
+      regionName: raw.region,
+      asn: raw.connection?.asn,
+      org: raw.connection?.org,
+      connectionType
+    };
+  }
+
+  async function fetchIpApiLookup(): Promise<ExitIpInfo> {
+    if (typeof window !== "undefined" && window.location.protocol === "https:") {
+      throw new Error("Skipping ip-api on HTTPS to avoid mixed-content blocking");
+    }
+
+    const res = await fetchWithTimeout("http://ip-api.com/json/?fields=61439", IP_LOOKUP_TIMEOUT_MS, {
+      cache: "no-store"
+    });
+    if (!res.ok) throw new Error("ip-api lookup failed");
+
+    const raw = await res.json();
+    if (raw?.status !== "success" || !raw?.query) throw new Error(raw?.message || "ip-api lookup failed");
+
+    return {
+      ...raw,
+      source: "ip-api.com",
+      connectionType: raw.hosting ? "hosting" : raw.proxy ? "proxy" : raw.mobile ? "mobile" : "residential"
+    };
+  }
+
+  function mergeTraceIntoIpInfo(ipInfo: ExitIpInfo, trace: Record<string, string> | null): ExitIpInfo {
+    if (!trace) return ipInfo;
+
+    return {
+      ...ipInfo,
+      query: trace.ip || ipInfo.query,
+      countryCode: ipInfo.countryCode || trace.loc || "",
+      source: trace.ip && trace.ip === ipInfo.query
+        ? ipInfo.source
+        : `${ipInfo.source || "lookup"} + cloudflare-trace`
+    };
+  }
+
+  function fallbackIpInfoFromTrace(trace: Record<string, string>): ExitIpInfo {
+    return {
+      status: "success",
+      query: trace.ip,
+      country: trace.loc || "Unknown",
+      countryCode: trace.loc || "",
+      timezone: "",
+      isp: `Cloudflare edge ${trace.colo || "unknown"}`,
+      mobile: false,
+      proxy: false,
+      hosting: false,
+      source: "cloudflare-trace",
+      connectionType: "unknown"
+    };
+  }
+
+  async function fetchExitIpInfo(): Promise<ExitIpInfo> {
+    const canUseIpApi = typeof window !== "undefined" && window.location.protocol !== "https:";
+    const lookupPromises = canUseIpApi
+      ? [fetchIpApiLookup(), fetchIpWhoisLookup()]
+      : [fetchIpWhoisLookup()];
+
+    const settled = await Promise.allSettled([fetchCloudflareTrace(), ...lookupPromises]);
+    const trace = settled[0].status === "fulfilled" ? settled[0].value : null;
+    const ipInfo = settled
+      .slice(1)
+      .find((result): result is PromiseFulfilledResult<ExitIpInfo> => result.status === "fulfilled")
+      ?.value;
+
+    if (ipInfo) return mergeTraceIntoIpInfo(ipInfo, trace);
+    if (trace?.ip) return fallbackIpInfoFromTrace(trace);
+
+    throw new Error("Unable to fetch exit IP information from the available providers");
+  }
+
+  function estimateIpReputation(ip_info: ExitIpInfo) {
+    const connectionType = ip_info.connectionType || classifyConnectionType(ip_info.isp, ip_info.org, ip_info.asn);
+    const is_hosting = ip_info.hosting || connectionType === "hosting";
+    const is_proxy = ip_info.proxy || connectionType === "proxy";
+    const is_mobile = ip_info.mobile || connectionType === "mobile";
+
+    if (is_hosting) {
+      return { success: true, fraud_score: 85, connection_type: "datacenter/hosting", abuse_velocity: "medium", active_vpn: true, active_tor: false };
+    }
+
+    if (is_proxy) {
+      return { success: true, fraud_score: 75, connection_type: "datacenter/proxy", abuse_velocity: "low", active_vpn: true, active_tor: false };
+    }
+
+    if (is_mobile) {
+      return { success: true, fraud_score: 15, connection_type: "mobile", abuse_velocity: "none", active_vpn: false, active_tor: false };
+    }
+
+    return { success: true, fraud_score: 8, connection_type: "residential", abuse_velocity: "none", active_vpn: false, active_tor: false };
+  }
+
+  async function fetchDnsLeakItems(checkUrl: string) {
+    const attempts = [
+      async () => {
+        const res = await fetchWithTimeout(
+          `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(checkUrl)}`,
+          DNS_LOOKUP_TIMEOUT_MS
+        );
+        if (!res.ok) throw new Error("Codetabs DNS proxy failed");
+        return await res.json();
+      },
+      async () => {
+        const res = await fetchWithTimeout(
+          `https://api.allorigins.win/get?url=${encodeURIComponent(checkUrl)}`,
+          DNS_LOOKUP_TIMEOUT_MS
+        );
+        if (!res.ok) throw new Error("AllOrigins DNS proxy failed");
+        const wrapper = await res.json();
+        if (!wrapper?.contents) throw new Error("AllOrigins DNS proxy returned empty content");
+        return JSON.parse(wrapper.contents);
+      }
+    ];
+
+    const results = await Promise.allSettled(attempts.map((attempt) => attempt()));
+    const success = results.find((result) => result.status === "fulfilled");
+    return success?.status === "fulfilled" ? success.value : null;
+  }
+
   // Perform DNS leak check in pure client-side JS
   async function performWebDnsLeakCheck(exitCountryCode: string): Promise<{ dns_leak_detected: boolean; dns_servers: string[]; leak_details: string }> {
     const uuid = "web-dns-" + Math.random().toString(36).substring(2, 12);
@@ -221,8 +470,8 @@
       // Ignore network failures or CORS errors, resolution packet was sent
     }
     
-    // 2. Wait for the DNS queries to resolve and propagate to bash.ws database
-    await new Promise(resolve => setTimeout(resolve, 1600));
+    // 2. Wait briefly for DNS queries to propagate to the bash.ws database.
+    await new Promise(resolve => setTimeout(resolve, 1200));
     
     // 3. Request DNS records history for this UUID
     const checkUrl = `https://bash.ws/dnsleak/test/${uuid}?json`;
@@ -231,32 +480,7 @@
     let leak_details = "未检测到 DNS 泄露。";
     
     try {
-      let items: any = null;
-      
-      // Attempt 1: codetabs.com CORS proxy (Fast, direct response)
-      try {
-        const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(checkUrl)}`);
-        if (res.ok) {
-          items = await res.json();
-        }
-      } catch (e) {
-        console.warn("Codetabs DNS CORS proxy failed, falling back to AllOrigins...", e);
-      }
-      
-      // Attempt 2: allorigins.win CORS proxy (High availability fallback)
-      if (!items || items.error) {
-        try {
-          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(checkUrl)}`);
-          if (res.ok) {
-            const wrapper = await res.json();
-            if (wrapper && wrapper.contents) {
-              items = JSON.parse(wrapper.contents);
-            }
-          }
-        } catch (e) {
-          console.warn("AllOrigins DNS CORS proxy failed...", e);
-        }
-      }
+      const items = await fetchDnsLeakItems(checkUrl);
       
       if (items && Array.isArray(items)) {
         for (const item of items) {
@@ -283,7 +507,7 @@
         dns_servers = [];
         leak_details = "未检测到有效的 DNS 泄露测试包。这说明目前没有检测到任何 DNS 泄露，您的本地 DNS 解析未向外部服务器暴露出泄露轨迹。";
       } else {
-        leak_details = "DNS 泄露返回结果数据解析失败。";
+        leak_details = "DNS 泄露检测服务暂时没有返回可解析结果。当前未发现明确泄露，建议稍后重试确认。";
       }
     } catch (err) {
       leak_details = "连通 DNS 泄露检测服务（bash.ws）失败，请检查您的网络连接。";
@@ -297,13 +521,6 @@
     isScanning = true;
     report = null;
     webrtcIps = [];
-
-    // 1. Scan WebRTC interface in the browser thread
-    try {
-      webrtcIps = await detectWebRtcIps();
-    } catch (e) {
-      console.warn("WebRTC scanning failed:", e);
-    }
 
     if (useMock) {
       // Run mock scenario loader with fake delay
@@ -320,31 +537,13 @@
     } else {
       // Run REAL audit in standard browser environment!
       try {
-        // A. Fetch Exit IP Geolocation. Fetch HTTP for local dev or fallback HTTPS for production.
-        let ip_info: any = null;
-        try {
-          const res = await fetch("http://ip-api.com/json/?fields=61439");
-          if (res.ok) {
-            ip_info = await res.json();
-          }
-        } catch (mixedContentErr) {
-          // Fallback to HTTPS geo API if mixed content blocks HTTP
-          const res = await fetch("https://ipapi.co/json/");
-          if (res.ok) {
-            const raw = await res.json();
-            ip_info = {
-              status: "success",
-              query: raw.ip,
-              country: raw.country_name,
-              countryCode: raw.country,
-              timezone: raw.timezone,
-              isp: raw.org,
-              mobile: false,
-              proxy: false,
-              hosting: false
-            };
-          }
-        }
+        const webRtcPromise = detectWebRtcIps().catch((e) => {
+          console.warn("WebRTC scanning failed:", e);
+          return [];
+        });
+
+        // A. Fetch exit IP via fast HTTPS providers with hard timeouts.
+        const ip_info = await fetchExitIpInfo();
 
         if (!ip_info || ip_info.status !== "success") {
           throw new Error("出口地理位置 IP 获取失败，请检查网络连接");
@@ -352,32 +551,15 @@
 
         const countryCode = ip_info.countryCode || "CN";
 
-        // B. Estimate IP reputation via ip-api flags (to avoid client-side CORS issues)
-        let ipqs_info = {
-          success: true,
-          fraud_score: 8,
-          connection_type: "residential",
-          abuse_velocity: "none",
-          active_vpn: false,
-          active_tor: false
-        };
+        // B. Estimate IP reputation from provider network metadata.
+        const ipqs_info = estimateIpReputation(ip_info);
 
-        const is_hosting = ip_info.hosting || false;
-        const is_proxy = ip_info.proxy || false;
-        const is_mobile = ip_info.mobile || false;
-
-        if (is_hosting) {
-          ipqs_info = { success: true, fraud_score: 85, connection_type: "datacenter", abuse_velocity: "medium", active_vpn: true, active_tor: false };
-        } else if (is_proxy) {
-          ipqs_info = { success: true, fraud_score: 75, connection_type: "datacenter/proxy", abuse_velocity: "low", active_vpn: true, active_tor: false };
-        } else if (is_mobile) {
-          ipqs_info = { success: true, fraud_score: 15, connection_type: "mobile", abuse_velocity: "none", active_vpn: false, active_tor: false };
-        } else {
-          ipqs_info = { success: true, fraud_score: 8, connection_type: "residential", abuse_velocity: "none", active_vpn: false, active_tor: false };
-        }
-
-        // C. Run DNS leak test in pure JS
-        const dns_report = await performWebDnsLeakCheck(countryCode);
+        // C. Run WebRTC and DNS leak checks concurrently.
+        const [detectedWebRtcIps, dns_report] = await Promise.all([
+          webRtcPromise,
+          performWebDnsLeakCheck(countryCode)
+        ]);
+        webrtcIps = detectedWebRtcIps;
 
         // D. Environment consistency check (JS native APIs)
         const system_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -689,6 +871,7 @@
 
   .accent-text {
     background: linear-gradient(135deg, #00f3ff 0%, #ff0055 100%);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }

@@ -632,7 +632,7 @@
         <h1>CLAUDE <span class="accent-text">SHIELD</span></h1>
         <span class="version-tag">Web v2.0-Light</span>
       </div>
-      <p class="subtitle">免责声明：本站检测结果均基于公开风控规则与本地库启发式估算得出，仅供学术交流与技术参考，不构成任何最终登录可用性担保。</p>
+      <p class="subtitle">注意：本站检测结果均基于公开风控规则与本地库启发式估算得出，仅供学术交流与技术参考，不构成任何最终登录可用性担保。</p>
     </div>
     
     <button class="theme-toggle-btn" onclick={toggleTheme} aria-label="切换主题风格">
